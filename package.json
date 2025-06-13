@@ -14,8 +14,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "codex-seed-bible-upload.helloWorld",
-        "title": "Hello World"
+        "command": "codex.seed-bible.upload-to-seed-bible",
+        "title": "Codex: Upload to Seed Bible"
+      },
+      {
+        "command": "codex.seed-bible.update-aws-credentials",
+        "title": "Codex: Update Seed Bible AWS Credentials"
       }
     ]
   },
