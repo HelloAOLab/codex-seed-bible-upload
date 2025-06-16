@@ -9,7 +9,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -18,13 +17,22 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: |
-        corepack enable
-        pnpm install
-    - run: pnpm compile
-    - run: pnpm
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install
+        run: |
+          corepack enable
+          pnpm install
+      - run: pnpm compile
+      - name: Package
+        run: |
+          version=$(cat package.json | jq '.version + "-${{ github.run_id }}"')
+          pnpm vsce package --no-dependencies --no-git-tag-version --pre-release "$version"
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'Extension'
+          path: '*.vsix'

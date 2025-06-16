@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { actions } from '@helloao/cli';
+// import { actions } from '@helloao/cli';
 import { registerUpdateAwsCredentialsCommand } from './commands/update-aws-credentials';
 import { registerUploadtoSeedBibleCommand } from './commands/upload-to-seed-bible';
 

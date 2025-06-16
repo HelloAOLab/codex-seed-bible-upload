@@ -12,3 +12,10 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+files/**
+.project/**
+data/**
+pnpm-lock.yaml
+.husky/**
+chat-threads.json
+.github/**
