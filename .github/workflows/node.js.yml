@@ -28,9 +28,7 @@ jobs:
           pnpm install
       - run: pnpm compile
       - name: Package
-        run: |
-          version=$(cat package.json | jq '.version + "-${{ github.run_id }}"')
-          pnpm vsce package --no-dependencies --no-git-tag-version --pre-release "$version"
+        run: pnpm vsce package --no-dependencies --no-git-tag-version --pre-release
       - name: Upload VSIX
         uses: actions/upload-artifact@v4
         with:
