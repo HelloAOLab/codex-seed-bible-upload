@@ -34,7 +34,7 @@ jobs:
       - name: Package Production
         if: github.ref_type == 'tag'
         run: |
-          pnpm vsce package --no-dependencies --no-git-tag-version ${{ github.ref_name }}
+          pnpm vsce package --no-dependencies --no-git-tag-version --no-update-package-json ${{ github.ref_name }}
       - name: Upload VSIX
         uses: actions/upload-artifact@v4
         with:
