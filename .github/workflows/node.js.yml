@@ -32,5 +32,5 @@ jobs:
       - name: Upload VSIX
         uses: actions/upload-artifact@v4
         with:
-          name: 'Extension'
+          name: 'codex-seed-bible-upload.vsix'
           path: '*.vsix'
