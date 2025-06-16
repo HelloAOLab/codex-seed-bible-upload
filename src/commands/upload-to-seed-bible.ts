@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { updateAwsCredentials } from './update-aws-credentials';
 import { actions } from '@helloao/cli';
 import { InputTranslationMetadata } from '@helloao/tools/generation/index.js';
+import { log } from '@helloao/tools';
 
 async function askForMetadata(): Promise<InputTranslationMetadata> {
   let metadata = {
@@ -70,10 +71,46 @@ async function loadOrAskForMetadata(
   return metadata;
 }
 
+class OutputLogger implements log.Logger {
+  private output: vscode.OutputChannel;
+
+  constructor(output: vscode.OutputChannel) {
+    this.output = output;
+  }
+
+  private _write(value: any): void {
+    if (typeof value === 'string') {
+      this.output.append(value);
+    } else {
+      this.output.append(JSON.stringify(value, null, 2));
+    }
+  }
+
+  log(message: string, ...args: any[]): void {
+    this._write(message);
+    for (let a of args) {
+      this._write(' ');
+      this._write(a);
+    }
+    this.output.appendLine('');
+  }
+
+  error(message: string, ...args: any[]): void {
+    this.output.append(`Error: `);
+    this.log(message, ...args);
+  }
+
+  warn(message: string, ...args: any[]): void {
+    this.output.append(`Warning: `);
+    this.log(message, ...args);
+  }
+}
+
 export async function uploadToSeedBible(
   context: vscode.ExtensionContext
 ): Promise<void> {
   const output = vscode.window.createOutputChannel('Seed Bible Upload');
+  log.setLogger(new OutputLogger(output));
 
   // 1. Get S3 API Key
   let accessKeyId: string | undefined =
@@ -193,21 +230,25 @@ export async function uploadToSeedBible(
 
     if (result) {
       output.appendLine('Upload successful!');
-      output.appendLine(`Upload URL: ${result.uploadS3Url}`);
+      output.appendLine(`Upload URL: ${result.url}/${result.version}`);
       output.appendLine(
         `Available Translations URL: ${result.availableTranslationsUrl}`
       );
+      output.appendLine(`S3 URL: ${result.uploadS3Url}`);
       output.appendLine(`Version: ${result.version}`);
 
       // copy URL to clipboard
-      const copyUrl = await vscode.window.showInformationMessage(
+      const answer = await vscode.window.showInformationMessage(
         `Upload successful! You can view your translation at: ${result.url}`,
-        'Copy URL'
+        'Copy URL',
+        'Show Output'
       );
 
-      if (copyUrl === 'Copy URL') {
+      if (answer === 'Copy URL') {
         await vscode.env.clipboard.writeText(result.availableTranslationsUrl);
         vscode.window.showInformationMessage('URL copied to clipboard!');
+      } else if (answer === 'Show Output') {
+        output.show();
       }
     } else {
       await showErrorOrOutput('Upload failed.', output);
