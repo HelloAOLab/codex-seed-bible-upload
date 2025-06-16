@@ -27,10 +27,23 @@ jobs:
           corepack enable
           pnpm install
       - run: pnpm compile
-      - name: Package
-        run: pnpm vsce package --no-dependencies --no-git-tag-version --pre-release
+      - name: Package Pre-release
+        if: github.ref_type != 'tag'
+        run: |
+          pnpm vsce package --no-dependencies --no-git-tag-version --pre-release
+      - name: Package Production
+        if: github.ref_type == 'tag'
+        run: |
+          pnpm vsce package --no-dependencies --no-git-tag-version ${{ github.ref_name }}
       - name: Upload VSIX
         uses: actions/upload-artifact@v4
         with:
           name: 'codex-seed-bible-upload.vsix'
           path: '*.vsix'
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: |
+            *.vsix
+            LICENSE
