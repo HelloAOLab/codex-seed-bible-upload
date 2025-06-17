@@ -15,7 +15,8 @@ import { log } from '@helloao/tools';
 const client = createRecordsClient('https://api.ao.bot');
 
 export async function getClient(
-  context: vscode.ExtensionContext
+  context: vscode.ExtensionContext,
+  automaticallyLogin = true
 ): Promise<RecordsClient & RecordsClientType> {
   if (!client.sessionKey) {
     let sessionKey = await context.secrets.get('aoBotSessionKey');
@@ -24,10 +25,10 @@ export async function getClient(
       const expiration = getSessionKeyExpiration(sessionKey);
       if (!isExpired(expiration)) {
         client.sessionKey = sessionKey;
-      } else {
+      } else if (automaticallyLogin) {
         await login(context);
       }
-    } else {
+    } else if (automaticallyLogin) {
       await login(context);
     }
   }

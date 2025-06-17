@@ -357,11 +357,6 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                     <h3>You are not logged in</h3>
                     <p>You need to log in to upload translations to the Seed Bible.</p>
                     
-                    <div class="form-group">
-                        <label for="email">Email Address:</label>
-                        <input type="email" id="login-email" placeholder="Enter your email address">
-                    </div>
-                    
                     <div class="form-actions">
                         <button type="button" id="login-btn">Log In</button>
                     </div>
@@ -665,7 +660,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
     const logger = log.getLogger();
     logger.log('Checking login status...');
     try {
-      const client = await getClient(this._context);
+      const client = await getClient(this._context, false);
 
       // Check if we have a valid session key
       if (!client.sessionKey) {
