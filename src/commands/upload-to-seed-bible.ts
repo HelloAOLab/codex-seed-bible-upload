@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { updateAwsCredentials } from './update-aws-credentials';
+import { getAwsCredentials } from '../utils';
 import { actions } from '@helloao/cli';
 import { InputTranslationMetadata } from '@helloao/tools/generation/index.js';
 import { log } from '@helloao/tools';
@@ -112,23 +112,16 @@ export async function uploadToSeedBible(
   const output = vscode.window.createOutputChannel('Seed Bible Upload');
   log.setLogger(new OutputLogger(output));
 
-  // 1. Get S3 API Key
-  let accessKeyId: string | undefined =
-    await context.secrets.get('awsAccessKeyId');
-  let secretAccessKey: string | undefined =
-    await context.secrets.get('awsSecretAccessKey');
+  let credentials = await getAwsCredentials(context);
 
-  if (!accessKeyId || !secretAccessKey) {
-    await updateAwsCredentials(context);
-  }
-
-  accessKeyId = await context.secrets.get('awsAccessKeyId');
-  secretAccessKey = await context.secrets.get('awsSecretAccessKey');
-
-  if (!accessKeyId || !secretAccessKey) {
-    vscode.window.showErrorMessage(
-      'AWS credentials are not set. Please update your AWS credentials first.'
-    );
+  if ('errorCode' in credentials) {
+    if (credentials.errorCode === 'not_authorized') {
+      vscode.window.showErrorMessage(
+        `You are not currently authorized to upload for the Seed Bible.\nPlease contact craig@helloao.org for access.`
+      );
+    } else {
+      vscode.window.showErrorMessage(`Error: ${credentials.errorMessage}`);
+    }
     return;
   }
 
@@ -221,8 +214,8 @@ export async function uploadToSeedBible(
 
   try {
     const result = await actions.uploadTestTranslation(folderToUpload.fsPath, {
-      accessKeyId,
-      secretAccessKey,
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
       s3Region: 'us-east-1',
       translationMetadata: metadata,
       bookNameMap,

@@ -7,6 +7,9 @@ settings:
 importers:
   .:
     dependencies:
+      '@casual-simulation/aux-common':
+        specifier: 3.5.1
+        version: 3.5.1
       '@casual-simulation/aux-records':
         specifier: 3.5.1
         version: 3.5.1
