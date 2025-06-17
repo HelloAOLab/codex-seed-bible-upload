@@ -24,11 +24,6 @@
         "icon": "$(sign-in)"
       },
       {
-        "command": "seed-bible.openPanel",
-        "title": "Seed Bible: Open Dashboard",
-        "icon": "$(dashboard)"
-      },
-      {
         "command": "seed-bible.webview.focus",
         "title": "Seed Bible: Open Metadata Editor",
         "icon": "$(edit)"

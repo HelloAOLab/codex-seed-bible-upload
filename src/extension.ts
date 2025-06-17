@@ -4,7 +4,6 @@ import * as vscode from 'vscode';
 import { registerUploadtoSeedBibleCommand } from './commands/upload-to-seed-bible';
 import { registerLoginToAoBotCommand } from './commands/login-to-ao-bot';
 import { SeedBibleWebviewProvider } from './webview/seed-bible-webview';
-import { registerSeedBiblePanelCommand } from './webview/seed-bible-panel';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -29,8 +28,6 @@ export function activate(context: vscode.ExtensionContext) {
     SeedBibleWebviewProvider.viewType,
     seedBibleWebviewProvider
   );
-  // Register Seed Bible panel command
-  const disposable4 = registerSeedBiblePanelCommand(context);
 
   // Register command to focus the webview
   const disposable5 = vscode.commands.registerCommand(
@@ -49,7 +46,6 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable1);
   context.subscriptions.push(disposable2);
   context.subscriptions.push(disposable3);
-  context.subscriptions.push(disposable4);
   context.subscriptions.push(disposable5);
 }
 

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { uploadToSeedBible } from '../commands/upload-to-seed-bible';
 import { InputTranslationMetadata } from '@helloao/tools/generation/index.js';
+import { log } from '@helloao/tools';
 
 /**
  * Manages the webview panel for the Seed Bible Upload UI
@@ -353,6 +354,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
    * Load the metadata from the workspace
    */
   private async _loadMetadata(): Promise<void> {
+    const logger = log.getLogger();
     try {
       // Try to find the workspace folder
       const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -363,21 +365,6 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
 
       // Look for the metadata file in the workspace
       let metadataUri: vscode.Uri | undefined;
-
-      // // First check if we can find it in files/target directory
-      // for (let folder of workspaceFolders) {
-      //   const targetDir = vscode.Uri.joinPath(folder.uri, 'files', 'target');
-      //   try {
-      //     const targetStat = await vscode.workspace.fs.stat(targetDir);
-      //     if (targetStat?.type === vscode.FileType.Directory) {
-      //       // Found target directory, look for metadata in parent dir
-      //       metadataUri = vscode.Uri.joinPath(folder.uri, 'seed-bible-metadata.json');
-      //       break;
-      //     }
-      //   } catch (e) {
-      //     // Target directory doesn't exist, try next folder
-      //   }
-      // }
 
       // If not found yet, check in root of each workspace folder
       if (!metadataUri) {
@@ -405,7 +392,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
         this._metadata = this._getDefaultMetadata();
       }
     } catch (error) {
-      console.error('Error loading metadata:', error);
+      logger.error('Error loading metadata:', error);
       this._metadata = this._getDefaultMetadata();
     }
   }
@@ -416,6 +403,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
   private async _saveMetadata(
     metadata: InputTranslationMetadata
   ): Promise<void> {
+    const logger = log.getLogger();
     try {
       // If we don't have a URI yet, ask the user where to save
       if (!this._metadataUri) {
@@ -459,7 +447,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
         new TextEncoder().encode(json)
       );
     } catch (error) {
-      console.error('Error saving metadata:', error);
+      logger.error('Error saving metadata:', error);
       vscode.window.showErrorMessage(`Failed to save metadata: ${error}`);
     }
   }
