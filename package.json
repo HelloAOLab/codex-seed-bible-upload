@@ -20,8 +20,22 @@
       {
         "command": "seed-bible.login",
         "title": "Seed Bible: Login"
+      },
+      {
+        "command": "seed-bible.openPanel",
+        "title": "Seed Bible: Open Dashboard"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "seed-bible.webview",
+          "name": "Seed Bible",
+          "icon": "$(book)"
+        }
+      ]
+    }
   },
   "repository": {
     "type": "git",
