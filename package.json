@@ -69,10 +69,6 @@
         {
           "command": "seed-bible.login",
           "when": "true"
-        },
-        {
-          "command": "seed-bible.openPanel",
-          "when": "true"
         }
       ]
     }

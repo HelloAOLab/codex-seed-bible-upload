@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import {
   RecordsClient,
+  RecordsClientType,
   createRecordsClient,
 } from '@casual-simulation/aux-records/RecordsClient';
 import {
@@ -15,7 +16,7 @@ const client = createRecordsClient('https://api.ao.bot');
 
 export async function getClient(
   context: vscode.ExtensionContext
-): Promise<RecordsClient> {
+): Promise<RecordsClient & RecordsClientType> {
   if (!client.sessionKey) {
     let sessionKey = await context.secrets.get('aoBotSessionKey');
 
@@ -157,5 +158,40 @@ export async function getAwsCredentials(
     const logger = log.getLogger();
     logger.error('Failed to get AWS credentials:', result);
     return result;
+  }
+}
+
+export class OutputLogger implements log.Logger {
+  output: vscode.OutputChannel;
+
+  constructor(output: vscode.OutputChannel) {
+    this.output = output;
+  }
+
+  private _write(value: any): void {
+    if (typeof value === 'string') {
+      this.output.append(value);
+    } else {
+      this.output.append(JSON.stringify(value, null, 2));
+    }
+  }
+
+  log(message: string, ...args: any[]): void {
+    this._write(message);
+    for (let a of args) {
+      this._write(' ');
+      this._write(a);
+    }
+    this.output.appendLine('');
+  }
+
+  error(message: string, ...args: any[]): void {
+    this.output.append(`Error: `);
+    this.log(message, ...args);
+  }
+
+  warn(message: string, ...args: any[]): void {
+    this.output.append(`Warning: `);
+    this.log(message, ...args);
   }
 }

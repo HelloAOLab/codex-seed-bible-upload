@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getAwsCredentials } from '../utils';
+import { getAwsCredentials, OutputLogger } from '../utils';
 import { actions } from '@helloao/cli';
 import { InputTranslationMetadata } from '@helloao/tools/generation/index.js';
 import { log } from '@helloao/tools';
@@ -41,6 +41,7 @@ async function loadOrAskForMetadata(
   metadataUri: vscode.Uri,
   output?: vscode.OutputChannel
 ): Promise<InputTranslationMetadata | undefined> {
+  const logger = log.getLogger();
   let metadata: InputTranslationMetadata | undefined;
 
   try {
@@ -48,11 +49,11 @@ async function loadOrAskForMetadata(
     metadata = JSON.parse(new TextDecoder().decode(bytes));
 
     if (output) {
-      output.appendLine(`Loaded metadata from ${metadataUri.fsPath}`);
+      logger.log(`Loaded metadata from ${metadataUri.fsPath}`);
     }
   } catch (error) {
     if (output) {
-      output.appendLine(
+      logger.log(
         `Error reading metadata file at ${metadataUri.fsPath}: ${error}`
       );
     }
@@ -84,14 +85,14 @@ async function loadOrAskForMetadata(
 
       if (answer === 'Yes') {
         if (output) {
-          output.appendLine(`Saving metadata to ${metadataUri.fsPath}...`);
+          logger.log(`Saving metadata to ${metadataUri.fsPath}...`);
         }
         await vscode.workspace.fs.writeFile(
           metadataUri,
           new TextEncoder().encode(JSON.stringify(metadata, null, 2))
         );
         if (output) {
-          output.appendLine(`Saved!`);
+          logger.log(`Saved!`);
         }
       }
     }
@@ -100,47 +101,10 @@ async function loadOrAskForMetadata(
   return metadata;
 }
 
-class OutputLogger implements log.Logger {
-  private output: vscode.OutputChannel;
-
-  constructor(output: vscode.OutputChannel) {
-    this.output = output;
-  }
-
-  private _write(value: any): void {
-    if (typeof value === 'string') {
-      this.output.append(value);
-    } else {
-      this.output.append(JSON.stringify(value, null, 2));
-    }
-  }
-
-  log(message: string, ...args: any[]): void {
-    this._write(message);
-    for (let a of args) {
-      this._write(' ');
-      this._write(a);
-    }
-    this.output.appendLine('');
-  }
-
-  error(message: string, ...args: any[]): void {
-    this.output.append(`Error: `);
-    this.log(message, ...args);
-  }
-
-  warn(message: string, ...args: any[]): void {
-    this.output.append(`Warning: `);
-    this.log(message, ...args);
-  }
-}
-
 export async function uploadToSeedBible(
   context: vscode.ExtensionContext
 ): Promise<void> {
-  const output = vscode.window.createOutputChannel('Seed Bible Upload');
-  log.setLogger(new OutputLogger(output));
-
+  const logger = log.getLogger();
   let credentials = await getAwsCredentials(context);
 
   if ('errorCode' in credentials) {
@@ -157,11 +121,11 @@ export async function uploadToSeedBible(
   let folderToUpload: vscode.Uri | undefined;
   let bookNameMap: Map<string, { commonName: string }> | undefined = undefined;
   if (vscode.workspace.isTrusted) {
-    output.appendLine('Workspace is trusted. Looking for target folder...');
+    logger.log('Workspace is trusted. Looking for target folder...');
     // get the files/target folder from the workspace
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
-      await showErrorOrOutput('No workspace folder found for upload.', output);
+      await showErrorOrOutput('No workspace folder found for upload.');
       return;
     }
 
@@ -170,7 +134,7 @@ export async function uploadToSeedBible(
       const targetStat = await vscode.workspace.fs.stat(target);
 
       if (targetStat?.type === vscode.FileType.Directory) {
-        output.appendLine(`Found target folder: ${target.fsPath}`);
+        logger.log(`Found target folder: ${target.fsPath}`);
         folderToUpload = target;
 
         let localizedBooks = vscode.Uri.joinPath(
@@ -192,20 +156,18 @@ export async function uploadToSeedBible(
             ])
           );
         } catch (error) {
-          output.appendLine(`Error reading localized-books.json: ${error}`);
-          output.appendLine(
+          logger.log(`Error reading localized-books.json: ${error}`);
+          logger.log(
             `This may cause uploaded book names to default to their English names.`
           );
-          console.error('Error reading localized-books.json:', error);
+          logger.error('Error reading localized-books.json:', error);
         }
 
         break workspace;
       }
     }
   } else {
-    output.appendLine(
-      'Workspace is not trusted. Skipping target folder search.'
-    );
+    logger.log('Workspace is not trusted. Skipping target folder search.');
   }
 
   if (!folderToUpload) {
@@ -218,14 +180,14 @@ export async function uploadToSeedBible(
     });
 
     if (!folderUri || folderUri.length === 0) {
-      await showErrorOrOutput('No folder selected for upload.', output);
+      await showErrorOrOutput('No folder selected for upload.');
       return;
     }
 
     folderToUpload = folderUri[0];
   }
 
-  output.appendLine('Uploading folder: ' + folderToUpload.fsPath);
+  logger.log('Uploading folder: ' + folderToUpload.fsPath);
 
   const metadataUri = vscode.Uri.joinPath(
     folderToUpload,
@@ -237,7 +199,7 @@ export async function uploadToSeedBible(
   const metadata = await loadOrAskForMetadata(metadataUri);
 
   if (!metadata) {
-    await showErrorOrOutput('No metadata provided for upload.', output);
+    await showErrorOrOutput('No metadata provided for upload.');
     return;
   }
 
@@ -251,45 +213,42 @@ export async function uploadToSeedBible(
     });
 
     if (result) {
-      output.appendLine('Upload successful!');
-      output.appendLine(`Upload URL: ${result.url}/${result.version}`);
-      output.appendLine(
+      logger.log('Upload successful!');
+      logger.log(`Upload URL: ${result.url}/${result.version}`);
+      logger.log(
         `Available Translations URL: ${result.availableTranslationsUrl}`
       );
-      output.appendLine(`S3 URL: ${result.uploadS3Url}`);
-      output.appendLine(`Version: ${result.version}`);
+      logger.log(`S3 URL: ${result.uploadS3Url}`);
+      logger.log(`Version: ${result.version}`);
 
       // copy URL to clipboard
       const answer = await vscode.window.showInformationMessage(
         `Upload successful! You can view your translation at: ${result.url}`,
-        'Copy URL',
-        'Show Output'
+        'Copy URL'
       );
 
       if (answer === 'Copy URL') {
         await vscode.env.clipboard.writeText(result.availableTranslationsUrl);
         vscode.window.showInformationMessage('URL copied to clipboard!');
-      } else if (answer === 'Show Output') {
-        output.show();
       }
     } else {
-      await showErrorOrOutput('Upload failed.', output);
+      await showErrorOrOutput('Upload failed.');
     }
   } catch (err) {
     console.error('Error during upload:', err);
-    output.appendLine(`Error during upload: ${err}`);
-    await showErrorOrOutput('Upload failed.', output);
+    logger.log(`Error during upload: ${err}`);
+    await showErrorOrOutput('Upload failed.');
   }
 }
 
-async function showErrorOrOutput(
-  message: string,
-  output: vscode.OutputChannel
-): Promise<void> {
+async function showErrorOrOutput(message: string): Promise<void> {
   const answer = await vscode.window.showErrorMessage(message, 'Show Output');
 
   if (answer === 'Show Output') {
-    output.show();
+    const logger = log.getLogger();
+    if (logger instanceof OutputLogger) {
+      logger.output.show();
+    }
   }
 }
 
