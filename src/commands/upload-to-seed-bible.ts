@@ -46,25 +46,54 @@ async function loadOrAskForMetadata(
   try {
     const bytes = await vscode.workspace.fs.readFile(metadataUri);
     metadata = JSON.parse(new TextDecoder().decode(bytes));
+
+    if (output) {
+      output.appendLine(`Loaded metadata from ${metadataUri.fsPath}`);
+    }
   } catch (error) {
-    output?.appendLine(
-      `Error reading metadata file at ${metadataUri.fsPath}: ${error}`
-    );
+    if (output) {
+      output.appendLine(
+        `Error reading metadata file at ${metadataUri.fsPath}: ${error}`
+      );
+    }
     console.error('Error reading metadata file:', error);
 
-    metadata = await askForMetadata();
+    // Try to open our webview to edit the metadata
+    const openWebview = await vscode.window.showInformationMessage(
+      'No metadata file found. Would you like to create one using the Seed Bible editor?',
+      'Open Editor',
+      'Enter Manually'
+    );
 
-    const answer = await vscode.window.showQuickPick(['Yes', 'No'], {
-      title: `Write metadata to ${metadataUri.fsPath}?`,
-    });
+    if (openWebview === 'Open Editor') {
+      // Focus the Seed Bible view in the Activity Bar
+      await vscode.commands.executeCommand('seed-bible.webview.focus');
 
-    if (answer === 'Yes') {
-      output?.appendLine(`Saving metadata to ${metadataUri.fsPath}...`);
-      await vscode.workspace.fs.writeFile(
-        metadataUri,
-        new TextEncoder().encode(JSON.stringify(metadata, null, 2))
+      // Show a message to guide the user
+      vscode.window.showInformationMessage(
+        'Please fill in the metadata fields in the Seed Bible panel and click "Save Metadata"'
       );
-      output?.appendLine(`Saved!`);
+
+      return undefined; // Exit for now, user will try again after creating metadata
+    } else {
+      metadata = await askForMetadata();
+
+      const answer = await vscode.window.showQuickPick(['Yes', 'No'], {
+        title: `Write metadata to ${metadataUri.fsPath}?`,
+      });
+
+      if (answer === 'Yes') {
+        if (output) {
+          output.appendLine(`Saving metadata to ${metadataUri.fsPath}...`);
+        }
+        await vscode.workspace.fs.writeFile(
+          metadataUri,
+          new TextEncoder().encode(JSON.stringify(metadata, null, 2))
+        );
+        if (output) {
+          output.appendLine(`Saved!`);
+        }
+      }
     }
   }
 

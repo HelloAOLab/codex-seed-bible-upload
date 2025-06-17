@@ -15,24 +15,69 @@
     "commands": [
       {
         "command": "seed-bible.upload",
-        "title": "Seed Bible: Upload Translation"
+        "title": "Seed Bible: Upload Translation",
+        "icon": "$(cloud-upload)"
       },
       {
         "command": "seed-bible.login",
-        "title": "Seed Bible: Login"
+        "title": "Seed Bible: Login",
+        "icon": "$(sign-in)"
       },
       {
         "command": "seed-bible.openPanel",
-        "title": "Seed Bible: Open Dashboard"
+        "title": "Seed Bible: Open Dashboard",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "seed-bible.webview.focus",
+        "title": "Seed Bible: Open Metadata Editor",
+        "icon": "$(edit)"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "seed-bible",
+          "title": "Seed Bible",
+          "icon": "media/seed-bible-icon.svg"
+        }
+      ]
+    },
     "views": {
-      "explorer": [
+      "seed-bible": [
         {
           "type": "webview",
           "id": "seed-bible.webview",
           "name": "Seed Bible",
-          "icon": "$(book)"
+          "visibility": "visible"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "seed-bible.upload",
+          "when": "view == seed-bible.webview",
+          "group": "navigation@1"
+        },
+        {
+          "command": "seed-bible.login",
+          "when": "view == seed-bible.webview",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "seed-bible.upload",
+          "when": "true"
+        },
+        {
+          "command": "seed-bible.login",
+          "when": "true"
+        },
+        {
+          "command": "seed-bible.openPanel",
+          "when": "true"
         }
       ]
     }

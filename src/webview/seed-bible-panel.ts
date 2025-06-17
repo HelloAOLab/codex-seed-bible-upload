@@ -17,7 +17,10 @@ export class SeedBiblePanel {
   private readonly _context: vscode.ExtensionContext;
   private _disposables: vscode.Disposable[] = [];
 
-  public static createOrShow(extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
+  public static createOrShow(
+    extensionUri: vscode.Uri,
+    context: vscode.ExtensionContext
+  ) {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -38,18 +41,34 @@ export class SeedBiblePanel {
         enableScripts: true,
 
         // And restrict the webview to only loading content from our extension's directory
-        localResourceRoots: [extensionUri]
+        localResourceRoots: [extensionUri],
       }
     );
 
-    SeedBiblePanel.currentPanel = new SeedBiblePanel(panel, extensionUri, context);
+    SeedBiblePanel.currentPanel = new SeedBiblePanel(
+      panel,
+      extensionUri,
+      context
+    );
   }
 
-  public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
-    SeedBiblePanel.currentPanel = new SeedBiblePanel(panel, extensionUri, context);
+  public static revive(
+    panel: vscode.WebviewPanel,
+    extensionUri: vscode.Uri,
+    context: vscode.ExtensionContext
+  ) {
+    SeedBiblePanel.currentPanel = new SeedBiblePanel(
+      panel,
+      extensionUri,
+      context
+    );
   }
 
-  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
+  private constructor(
+    panel: vscode.WebviewPanel,
+    extensionUri: vscode.Uri,
+    context: vscode.ExtensionContext
+  ) {
     this._panel = panel;
     this._extensionUri = extensionUri;
     this._context = context;
@@ -91,7 +110,7 @@ export class SeedBiblePanel {
 
   private _update() {
     const webview = this._panel.webview;
-    this._panel.title = "Seed Bible Upload";
+    this._panel.title = 'Seed Bible Upload';
     this._panel.webview.html = this._getHtmlForWebview(webview);
   }
 
@@ -167,7 +186,7 @@ export class SeedBiblePanel {
                 <button id="uploadButton">Upload to Seed Bible</button>
             </div>
             
-            <p>For more information about the Seed Bible project, please visit the <a href="https://seedbible.com" target="_blank">Seed Bible website</a>.</p>
+            <p>For more information about the Seed Bible project, please visit the <a href="https://helloao.org" target="_blank">Seed Bible website</a>.</p>
         </div>
 
         <script>
@@ -184,7 +203,9 @@ export class SeedBiblePanel {
   }
 }
 
-export function registerSeedBiblePanelCommand(context: vscode.ExtensionContext): vscode.Disposable {
+export function registerSeedBiblePanelCommand(
+  context: vscode.ExtensionContext
+): vscode.Disposable {
   return vscode.commands.registerCommand('seed-bible.openPanel', () => {
     SeedBiblePanel.createOrShow(context.extensionUri, context);
   });

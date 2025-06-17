@@ -29,14 +29,28 @@ export function activate(context: vscode.ExtensionContext) {
     SeedBibleWebviewProvider.viewType,
     seedBibleWebviewProvider
   );
-  
   // Register Seed Bible panel command
   const disposable4 = registerSeedBiblePanelCommand(context);
+
+  // Register command to focus the webview
+  const disposable5 = vscode.commands.registerCommand(
+    'seed-bible.webview.focus',
+    async () => {
+      // First make sure the activity bar view is visible
+      await vscode.commands.executeCommand(
+        'workbench.view.extension.seed-bible'
+      );
+
+      // Then focus the specific webview
+      await vscode.commands.executeCommand('seed-bible.webview.focus');
+    }
+  );
 
   context.subscriptions.push(disposable1);
   context.subscriptions.push(disposable2);
   context.subscriptions.push(disposable3);
   context.subscriptions.push(disposable4);
+  context.subscriptions.push(disposable5);
 }
 
 // This method is called when your extension is deactivated
