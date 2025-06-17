@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { registerUploadtoSeedBibleCommand } from './commands/upload-to-seed-bible';
 import { registerLoginToAoBotCommand } from './commands/login-to-ao-bot';
+import { registerLogoutFromAoBotCommand } from './commands/logout-from-ao-bot';
 import { SeedBibleWebviewProvider } from './webview/seed-bible-webview';
 import { log } from '@helloao/tools';
 import { OutputLogger } from './utils';
@@ -26,6 +27,9 @@ export function activate(context: vscode.ExtensionContext) {
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
   const disposable2 = registerUploadtoSeedBibleCommand(context);
+
+  // Register logout command
+  const disposable4 = registerLogoutFromAoBotCommand(context);
 
   // Register Seed Bible webview
   const seedBibleWebviewProvider = new SeedBibleWebviewProvider(context);
@@ -51,6 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable1);
   context.subscriptions.push(disposable2);
   context.subscriptions.push(disposable3);
+  context.subscriptions.push(disposable4);
   context.subscriptions.push(disposable5);
 }
 

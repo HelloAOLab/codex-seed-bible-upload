@@ -24,6 +24,11 @@
         "icon": "$(sign-in)"
       },
       {
+        "command": "seed-bible.logout",
+        "title": "Seed Bible: Logout",
+        "icon": "$(sign-out)"
+      },
+      {
         "command": "seed-bible.webview.focus",
         "title": "Seed Bible: Open Metadata Editor",
         "icon": "$(edit)"
@@ -59,6 +64,11 @@
           "command": "seed-bible.login",
           "when": "view == seed-bible.webview",
           "group": "navigation@2"
+        },
+        {
+          "command": "seed-bible.logout",
+          "when": "view == seed-bible.webview",
+          "group": "navigation@3"
         }
       ],
       "commandPalette": [
@@ -68,6 +78,10 @@
         },
         {
           "command": "seed-bible.login",
+          "when": "true"
+        },
+        {
+          "command": "seed-bible.logout",
           "when": "true"
         }
       ]

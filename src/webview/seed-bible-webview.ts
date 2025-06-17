@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { uploadToSeedBible } from '../commands/upload-to-seed-bible';
 import { InputTranslationMetadata } from '@helloao/tools/generation/index.js';
 import { log } from '@helloao/tools';
-import { getClient, getOptions, login } from '../utils';
+import { getClient, getOptions, login, logout } from '../utils';
 import { RecordsClient } from '@casual-simulation/aux-records/RecordsClient';
 import {
   getSessionKeyExpiration,
@@ -88,6 +88,30 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
             }
           } catch (error) {
             vscode.window.showErrorMessage(`Login failed: ${error}`);
+          }
+          break;
+        case 'logout':
+          try {
+            const success = await logout(this._context);
+
+            // Check login status after logout attempt
+            const loginStatus = await this._checkLoginStatus();
+
+            // Update the account tab with new status
+            if (this._view) {
+              this._view.webview.postMessage({
+                command: 'updateLoginStatus',
+                loginStatus,
+              });
+            }
+
+            if (success) {
+              vscode.window.showInformationMessage(
+                'You have been logged out successfully.'
+              );
+            }
+          } catch (error) {
+            vscode.window.showErrorMessage(`Logout failed: ${error}`);
           }
           break;
         case 'checkLoginStatus':
@@ -325,6 +349,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                     </div>
                     <div class="form-actions">
                         <button type="button" id="refresh-login-btn">Refresh Status</button>
+                        <button type="button" id="logout-btn">Log Out</button>
                     </div>
                 </div>
                 
@@ -492,6 +517,18 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
             // Handle refresh login button
             document.getElementById('refresh-login-btn').addEventListener('click', () => {
                 refreshLoginStatus();
+            });
+            
+            // Handle logout button
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                // Show loading view
+                document.getElementById('login-status-loading').style.display = 'block';
+                document.getElementById('logged-in-view').style.display = 'none';
+                document.getElementById('logged-out-view').style.display = 'none';
+                
+                vscode.postMessage({
+                    command: 'logout'
+                });
             });
         </script>
     </body>

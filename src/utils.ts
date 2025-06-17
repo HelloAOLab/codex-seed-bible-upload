@@ -195,3 +195,67 @@ export class OutputLogger implements log.Logger {
     this.log(message, ...args);
   }
 }
+
+export async function logout(
+  context: vscode.ExtensionContext
+): Promise<boolean> {
+  const logger = log.getLogger();
+  logger.log('Logging out from ao.bot...');
+
+  try {
+    // Check if we have a session key
+    if (!client.sessionKey) {
+      const sessionKey = await context.secrets.get('aoBotSessionKey');
+      if (sessionKey) {
+        client.sessionKey = sessionKey;
+      } else {
+        // Already logged out
+        logger.log('No session key found, already logged out');
+        return true;
+      }
+    }
+
+    // Attempt to revoke the session if the client has that capability
+    try {
+      const result = await client.revokeSession(
+        {
+          sessionKey: client.sessionKey,
+        },
+        getOptions()
+      );
+
+      if (!result.success) {
+        logger.warn('Failed to revoke session:', result);
+        // Continue with logout even if revocation fails
+      } else {
+        logger.log('Successfully revoked session');
+      }
+    } catch (revokeError) {
+      logger.warn('Error revoking session:', revokeError);
+      // Continue with logout even if revocation fails
+    }
+
+    // Clear the session key from the client
+    client.sessionKey = '';
+
+    // Remove the session key from secrets storage
+    await context.secrets.delete('aoBotSessionKey');
+
+    logger.log('Successfully logged out');
+    vscode.window.showInformationMessage(
+      'You have been logged out successfully.'
+    );
+    return true;
+  } catch (error) {
+    logger.error('Error during logout:', error);
+
+    // Even if there's an error, we should still clear the local session
+    client.sessionKey = '';
+    await context.secrets.delete('aoBotSessionKey');
+
+    vscode.window.showWarningMessage(
+      `Logout encountered an error, but you've been logged out locally: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return false;
+  }
+}
