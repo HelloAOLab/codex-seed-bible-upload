@@ -44,27 +44,28 @@
     "vscode:package": "pnpm vsce package --no-dependencies"
   },
   "devDependencies": {
-    "@types/vscode": "^1.101.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/vscode": "^1.101.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
-    "eslint": "^9.25.1",
-    "esbuild": "^0.25.3",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.8.3",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.5.0",
+    "esbuild": "^0.25.3",
+    "eslint": "^9.25.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
-    "pretty-quick": "^4.2.2",
+    "npm-run-all": "^4.1.5",
     "prettier": "^3.5.3",
-    "@vscode/vsce": "^3.5.0"
+    "pretty-quick": "^4.2.2",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@helloao/cli": "^0.0.10"
+    "@helloao/cli": "0.0.11",
+    "@helloao/tools": "0.0.11"
   },
-  "packageManager": "pnpm@9.12.2+sha512.22721b3a11f81661ae1ec68ce1a7b879425a1ca5b991c975b074ac220b187ce56c708fe5db69f4c962c989452eee76c82877f4ee80f474cebd61ee13461b6228",
+  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac",
   "lint-staged": {
     "*.{js,jsx,ts,tsx,vue}": [
       "eslint --fix"
