@@ -274,10 +274,7 @@ async function showErrorOrOutput(
 export function registerUploadtoSeedBibleCommand(
   context: vscode.ExtensionContext
 ): vscode.Disposable {
-  return vscode.commands.registerCommand(
-    'codex.seed-bible.upload-to-seed-bible',
-    async () => {
-      return await uploadToSeedBible(context);
-    }
-  );
+  return vscode.commands.registerCommand('seed-bible.upload', async () => {
+    return await uploadToSeedBible(context);
+  });
 }

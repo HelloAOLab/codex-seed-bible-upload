@@ -14,12 +14,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "codex.seed-bible.upload-to-seed-bible",
-        "title": "Codex: Upload to Seed Bible"
+        "command": "seed-bible.upload",
+        "title": "Seed Bible: Upload Translation"
       },
       {
-        "command": "codex.seed-bible.update-aws-credentials",
-        "title": "Codex: Update Seed Bible AWS Credentials"
+        "command": "seed-bible.login",
+        "title": "Seed Bible: Login"
       }
     ]
   },
@@ -63,7 +63,8 @@
   },
   "dependencies": {
     "@helloao/cli": "0.0.11",
-    "@helloao/tools": "0.0.11"
+    "@helloao/tools": "0.0.11",
+    "@casual-simulation/aux-records": "3.5.1"
   },
   "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac",
   "lint-staged": {

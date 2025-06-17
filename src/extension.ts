@@ -1,9 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-// import { actions } from '@helloao/cli';
-import { registerUpdateAwsCredentialsCommand } from './commands/update-aws-credentials';
 import { registerUploadtoSeedBibleCommand } from './commands/upload-to-seed-bible';
+import { registerLoginToAoBotCommand } from './commands/login-to-ao-bot';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -14,7 +13,8 @@ export function activate(context: vscode.ExtensionContext) {
     'Congratulations, your extension "codex-seed-bible-upload" is now active!'
   );
 
-  const disposable1 = registerUpdateAwsCredentialsCommand(context);
+  // const disposable1 = registerUpdateAwsCredentialsCommand(context);
+  const disposable1 = registerLoginToAoBotCommand(context);
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
