@@ -94,7 +94,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
           const status = await this._checkLoginStatus();
           webviewView.webview.postMessage({
             command: 'updateLoginStatus',
-            status: status,
+            loginStatus: status,
           });
           break;
       }
@@ -319,7 +319,9 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 <div id="logged-in-view" class="card" style="display: none;">
                     <h3>You are logged in</h3>
                     <div id="user-info">
-                        <p>Your session is active until: <span id="session-expires"></span></p>
+                        <p><strong>User ID:</strong> <span id="user-id">Loading...</span></p>
+                        <p><strong>Email:</strong> <span id="user-email">Loading...</span></p>
+                        <p><strong>Session expires:</strong> <span id="session-expires">Loading...</span></p>
                     </div>
                     <div class="form-actions">
                         <button type="button" id="refresh-login-btn">Refresh Status</button>
@@ -394,7 +396,14 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                     
                     // Update user info
                     if (status.userInfo) {
-                        document.getElementById('session-expires').textContent = status.userInfo.sessionExpires;
+                        // Set session expiration
+                        document.getElementById('session-expires').textContent = status.userInfo.sessionExpires || 'Unknown';
+                        
+                        // Set user ID
+                        document.getElementById('user-id').textContent = status.userInfo.userId || 'Unknown';
+                        
+                        // Set email
+                        document.getElementById('user-email').textContent = status.userInfo.email ||  'Unknown';
                     }
                 } else {
                     // Show logged out view
@@ -430,7 +439,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                         updateFormWithMetadata(currentMetadata);
                         break;
                     case 'updateLoginStatus':
-                        loginStatus = message.status;
+                        loginStatus = message.loginStatus;
                         updateLoginStatusUI(loginStatus);
                         break;
                 }
@@ -650,12 +659,14 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
       logger.log('User info:', info);
 
       // If we have a valid session key, we're logged in
-      // For simplicity, we'll just show the session expiration time as user info
       return {
         isLoggedIn: true,
         userInfo: {
-          ...info,
           sessionExpires: new Date(expiration).toLocaleString(),
+          userId: userId,
+          name: info.success ? info.name : null,
+          email: info.success ? info.email : null,
+          displayName: info.success ? info.displayName : null,
         },
       };
     } catch (error) {
