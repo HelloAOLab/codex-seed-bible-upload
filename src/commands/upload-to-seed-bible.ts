@@ -105,9 +105,10 @@ export async function uploadToSeedBible(
   context: vscode.ExtensionContext
 ): Promise<void> {
   const logger = log.getLogger();
-  let credentials = await getAwsCredentials(context);
+  const credentials = await getAwsCredentials(context);
 
   if ('errorCode' in credentials) {
+    logger.error(`Error obtaining AWS credentials:`, credentials);
     if (credentials.errorCode === 'not_authorized') {
       vscode.window.showErrorMessage(
         `You are not currently authorized to upload for the Seed Bible.\nPlease contact craig@helloao.org for access.`
@@ -116,6 +117,8 @@ export async function uploadToSeedBible(
       vscode.window.showErrorMessage(`Error: ${credentials.errorMessage}`);
     }
     return;
+  } else {
+    logger.log('AWS credentials obtained successfully.', credentials);
   }
 
   let folderToUpload: vscode.Uri | undefined;
