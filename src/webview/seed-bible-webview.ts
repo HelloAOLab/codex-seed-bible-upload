@@ -281,9 +281,9 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                     <div class="card">
                         <h3>Basic Information</h3>
                         <div class="form-group">
-                            <label for="id">ID (short code):</label>
+                            <label for="id">ID:</label>
                             <input type="text" id="id" name="id" required>
-                            <div class="helper-text">A short identifier (e.g., "kjv", "niv")</div>
+                            <div class="helper-text">The unique identifier for the translation (e.g., "kjv", "niv")</div>
                         </div>
                         <div class="form-group">
                             <label for="name">Name:</label>
@@ -295,13 +295,18 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                             <input type="text" id="englishName" name="englishName" required>
                             <div class="helper-text">The name of the translation in English</div>
                         </div>
+                        <div class="form-group">
+                            <label for="shortName">Short Name:</label>
+                            <input type="text" id="shortName" name="shortName" required>
+                            <div class="helper-text">A short name for the translation (defaults to ID if not provided)</div>
+                        </div>
                     </div>
                     
                     <div class="card">
                         <h3>Language Settings</h3>
                         <div class="form-group">
                             <label for="language">Language Code:</label>
-                            <input type="text" id="language" name="language" required>
+                            <input type="text" id="language" name="language" required minlength="3" maxlength="3">
                             <div class="helper-text">ISO 639-3 language code (e.g., "eng" for English)</div>
                         </div>
                         <div class="form-group">
@@ -328,7 +333,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" id="saveMetadataBtn">Save Metadata</button>
+                        <button type="submit" id="saveMetadataBtn">Save Metadata</button>
                         <button type="button" id="reloadMetadataBtn">Reload</button>
                     </div>
                 </form>
@@ -393,6 +398,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 document.getElementById('id').value = metadata.id || '';
                 document.getElementById('name').value = metadata.name || '';
                 document.getElementById('englishName').value = metadata.englishName || '';
+                document.getElementById('shortName').value = metadata.shortName || metadata.id || '';
                 document.getElementById('language').value = metadata.language || '';
                 document.getElementById('direction').value = metadata.direction || 'ltr';
                 document.getElementById('website').value = metadata.website || '';
@@ -466,11 +472,16 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
             });
             
             // Handle form submission
-            document.getElementById('saveMetadataBtn').addEventListener('click', () => {
+            document.getElementById('metadataForm').addEventListener('submit', (event) => {
+                // Prevent the default form submission behavior
+                event.preventDefault();
+                
+                // Form will be validated by HTML5 before this code runs
                 const formData = {
                     id: document.getElementById('id').value,
                     name: document.getElementById('name').value,
                     englishName: document.getElementById('englishName').value,
+                    shortName: document.getElementById('shortName').value,
                     language: document.getElementById('language').value,
                     direction: document.getElementById('direction').value,
                     website: document.getElementById('website').value,
@@ -524,6 +535,33 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 vscode.postMessage({
                     command: 'logout'
                 });
+            });
+            
+            // Handle ID change to update shortName if empty or matching the ID
+            document.getElementById('id').addEventListener('input', (event) => {
+                const idField = event.target;
+                const shortNameField = document.getElementById('shortName');
+                
+                // Update shortName only if it's empty or was the same as the previous ID
+                if (!shortNameField.value || shortNameField.value === idField.dataset.previousValue) {
+                    shortNameField.value = idField.value;
+                }
+                
+                // Store the current ID value for future comparison
+                idField.dataset.previousValue = idField.value;
+            });
+            
+            // Initialize the previous value
+            const idField = document.getElementById('id');
+            idField.dataset.previousValue = idField.value;
+            
+            // Handle shortName blur to reset to ID if empty
+            document.getElementById('shortName').addEventListener('blur', (event) => {
+                const shortNameField = event.target;
+                if (!shortNameField.value) {
+                    const idField = document.getElementById('id');
+                    shortNameField.value = idField.value;
+                }
             });
         </script>
     </body>
@@ -642,6 +680,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
       id: '',
       name: '',
       englishName: '',
+      shortName: '',
       language: '',
       direction: 'ltr',
     } as InputTranslationMetadata;

@@ -14,6 +14,7 @@ async function askForMetadata(): Promise<InputTranslationMetadata> {
     'id',
     'name',
     'englishName',
+    'shortName',
     'language',
     'direction',
   ];
@@ -24,10 +25,25 @@ async function askForMetadata(): Promise<InputTranslationMetadata> {
       value = await vscode.window.showQuickPick(['ltr', 'rtl'], {
         title: 'Metadata - Text Direction',
       });
+    } else if (key === 'shortName') {
+      value = await vscode.window.showInputBox({
+        title: 'Metadata - Short Name',
+        prompt:
+          'Enter a short name for the translation (e.g., "BSB", "KJV", etc.)',
+        placeHolder: 'shortName',
+        value: metadata.id,
+        validateInput: (value: string) => {
+          if (!value) {
+            return 'Short name is required.';
+          }
+          return null;
+        },
+      });
     } else {
       value = await vscode.window.showInputBox({
         prompt: `Enter value for ${key}`,
         title: `Metadata - ${key}`,
+        placeHolder: key,
       });
     }
 
