@@ -14,11 +14,11 @@ importers:
         specifier: 3.5.1
         version: 3.5.1
       '@helloao/cli':
-        specifier: 0.0.11
-        version: 0.0.11
+        specifier: 0.0.12
+        version: 0.0.12
       '@helloao/tools':
-        specifier: 0.0.11
-        version: 0.0.11
+        specifier: 0.0.12
+        version: 0.0.12
     devDependencies:
       '@types/mocha':
         specifier: ^10.0.10
@@ -868,17 +868,17 @@ packages:
         integrity: sha512-TbxGrJ/kMZZevw12XysjyHJjWWuNhO5FLWwD0Zwrb+/8Y1+6cKAlgP/n3P8dN86mXd9aFUKoI7hgsLbTaI38/w==,
       }
 
-  '@helloao/cli@0.0.11':
+  '@helloao/cli@0.0.12':
     resolution:
       {
-        integrity: sha512-CN/tHRvl8BFXOKrETn59VIFhiRoTjgZaf2c0stG+Yc6odhdN7Jeg3LGFqhZNIJ3czw5u8xy150I5HHO6BWMe/g==,
+        integrity: sha512-YXxVsg0ckETc89wQjtYxD6BB286BKS/gwofxNeIew5fAyOmX6qEhOMI/w+3JBMxm1IIc9EBxEXFlxDjaOQt26Q==,
       }
     hasBin: true
 
-  '@helloao/tools@0.0.11':
+  '@helloao/tools@0.0.12':
     resolution:
       {
-        integrity: sha512-L2uf7GO/EYKk/CW89RHPib0wy6IOi1d6CvTVg2kKSq6YauR15n8QQrKhFOjS3Ygb8GuYDPRXu5yKhCvh8ssi6Q==,
+        integrity: sha512-BzpksbrrxlR22btQla8UwIBF1s02FzaeZ2mLzKDq+Vrvovlh5Hnpm9LX6s5grExI4juZfc6hQ8vL0sOfNjYQCQ==,
       }
 
   '@hexagon/base64@1.1.28':
@@ -7227,12 +7227,12 @@ snapshots:
 
   '@gracious.tech/fetch-client@0.7.0': {}
 
-  '@helloao/cli@0.0.11':
+  '@helloao/cli@0.0.12':
     dependencies:
       '@aws-sdk/client-s3': 3.830.0
       '@aws-sdk/credential-providers': 3.830.0
       '@gracious.tech/fetch-client': 0.7.0
-      '@helloao/tools': 0.0.11
+      '@helloao/tools': 0.0.12
       '@inquirer/prompts': 5.3.8
       '@prisma/client': 5.22.0(prisma@5.22.0)
       '@smithy/config-resolver': 3.0.13
@@ -7251,7 +7251,7 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@helloao/tools@0.0.11':
+  '@helloao/tools@0.0.12':
     dependencies:
       lodash: 4.17.21
       papaparse: 5.4.1
