@@ -46,9 +46,6 @@ export function activate(context: vscode.ExtensionContext) {
       await vscode.commands.executeCommand(
         'workbench.view.extension.seed-bible'
       );
-
-      // Then focus the specific webview
-      await vscode.commands.executeCommand('seed-bible.webview.focus');
     }
   );
 
