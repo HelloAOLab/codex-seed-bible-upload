@@ -251,6 +251,37 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 color: var(--vscode-textLink-activeForeground);
                 text-decoration: underline;
             }
+            .user-info-row {
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            .copy-button {
+                margin-left: 8px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+                padding: 2px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 2px;
+                width: 20px;
+                height: 20px;
+            }
+            .copy-button:hover {
+                background-color: var(--vscode-toolbar-hoverBackground);
+            }
+            .user-info-row:hover .copy-button {
+                opacity: 1;
+            }
+            .copy-icon {
+                width: 14px;
+                height: 14px;
+                fill: var(--vscode-foreground);
+            }
         </style>
     </head>
     <body>
@@ -348,7 +379,15 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 <div id="logged-in-view" class="card" style="display: none;">
                     <h3>You are logged in</h3>
                     <div id="user-info">
-                        <p><strong>User ID:</strong> <span id="user-id">Loading...</span></p>
+                        <div class="user-info-row">
+                            <p><strong>User ID:</strong> <span id="user-id">Loading...</span></p>
+                            <button class="copy-button" id="copy-user-id-btn" title="Copy User ID">
+                                <svg class="copy-icon" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                            </button>
+                        </div>
                         <p><strong>Email:</strong> <span id="user-email">Loading...</span></p>
                         <p><strong>Session expires:</strong> <span id="session-expires">Loading...</span></p>
                     </div>
@@ -535,6 +574,37 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 vscode.postMessage({
                     command: 'logout'
                 });
+            });
+            
+            // Handle copy user ID button
+            document.getElementById('copy-user-id-btn').addEventListener('click', async () => {
+                const userIdElement = document.getElementById('user-id');
+                const userId = userIdElement.textContent;
+                
+                if (userId && userId !== 'Loading...' && userId !== 'Unknown') {
+                    try {
+                        await navigator.clipboard.writeText(userId);
+                        
+                        // Show a temporary visual feedback
+                        const button = document.getElementById('copy-user-id-btn');
+                        const originalTitle = button.title;
+                        button.title = 'Copied!';
+                        
+                        // Reset the title after 2 seconds
+                        setTimeout(() => {
+                            button.title = originalTitle;
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Failed to copy user ID:', err);
+                        // Fallback for older browsers or when clipboard API is not available
+                        const textArea = document.createElement('textarea');
+                        textArea.value = userId;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                    }
+                }
             });
             
             // Handle ID change to update shortName if empty or matching the ID
