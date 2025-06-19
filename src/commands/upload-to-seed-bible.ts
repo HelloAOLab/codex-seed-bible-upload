@@ -54,27 +54,40 @@ async function askForMetadata(): Promise<InputTranslationMetadata> {
 }
 
 async function loadOrAskForMetadata(
-  metadataUri: vscode.Uri,
+  metadataUris: vscode.Uri | vscode.Uri[],
   output?: vscode.OutputChannel
 ): Promise<InputTranslationMetadata | undefined> {
   const logger = log.getLogger();
   let metadata: InputTranslationMetadata | undefined;
+  
+  // Normalize to array for consistent handling
+  const uris = Array.isArray(metadataUris) ? metadataUris : [metadataUris];
+  let loadedFromUri: vscode.Uri | undefined;
 
-  try {
-    const bytes = await vscode.workspace.fs.readFile(metadataUri);
-    metadata = JSON.parse(new TextDecoder().decode(bytes));
+  // Try to load from each URI in order
+  for (const metadataUri of uris) {
+    try {
+      const bytes = await vscode.workspace.fs.readFile(metadataUri);
+      metadata = JSON.parse(new TextDecoder().decode(bytes));
+      loadedFromUri = metadataUri;
 
-    if (output) {
-      logger.log(`Loaded metadata from ${metadataUri.fsPath}`);
+      if (output) {
+        logger.log(`Loaded metadata from ${metadataUri.fsPath}`);
+      }
+      break; // Successfully loaded, exit loop
+    } catch (error) {
+      if (output) {
+        logger.log(
+          `Error reading metadata file at ${metadataUri.fsPath}: ${error}`
+        );
+      }
+      console.error('Error reading metadata file:', error);
+      // Continue to next URI
     }
-  } catch (error) {
-    if (output) {
-      logger.log(
-        `Error reading metadata file at ${metadataUri.fsPath}: ${error}`
-      );
-    }
-    console.error('Error reading metadata file:', error);
+  }
 
+  // If no metadata was loaded from any URI, ask for it
+  if (!metadata) {
     // Try to open our webview to edit the metadata
     const openWebview = await vscode.window.showInformationMessage(
       'No metadata file found. Would you like to create one using the Seed Bible editor?',
@@ -95,16 +108,18 @@ async function loadOrAskForMetadata(
     } else {
       metadata = await askForMetadata();
 
+      // Use the last URI for saving
+      const saveToUri = uris[uris.length - 1];
       const answer = await vscode.window.showQuickPick(['Yes', 'No'], {
-        title: `Write metadata to ${metadataUri.fsPath}?`,
+        title: `Write metadata to ${saveToUri.fsPath}?`,
       });
 
       if (answer === 'Yes') {
         if (output) {
-          logger.log(`Saving metadata to ${metadataUri.fsPath}...`);
+          logger.log(`Saving metadata to ${saveToUri.fsPath}...`);
         }
         await vscode.workspace.fs.writeFile(
-          metadataUri,
+          saveToUri,
           new TextEncoder().encode(JSON.stringify(metadata, null, 2))
         );
         if (output) {
@@ -208,14 +223,21 @@ export async function uploadToSeedBible(
 
   logger.log('Uploading folder: ' + folderToUpload.fsPath);
 
-  const metadataUri = vscode.Uri.joinPath(
+  const metadataJsonUri = vscode.Uri.joinPath(
+    folderToUpload,
+    'metadata.json'
+  );
+  const seedBibleMetadataUri = vscode.Uri.joinPath(
     folderToUpload,
     '..',
     '..',
     'seed-bible-metadata.json'
   );
 
-  const metadata = await loadOrAskForMetadata(metadataUri);
+  const metadata = await loadOrAskForMetadata([
+    metadataJsonUri,
+    seedBibleMetadataUri,
+  ]);
 
   if (!metadata) {
     await showErrorOrOutput('No metadata provided for upload.');
