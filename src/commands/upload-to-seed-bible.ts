@@ -262,15 +262,38 @@ export async function uploadToSeedBible(
       logger.log(`S3 URL: ${result.uploadS3Url}`);
       logger.log(`Version: ${result.version}`);
 
+      const seedBibleUrl = new URL(
+        `https://ao.bot/?pattern=seedBibleDev-Translation`
+      );
+      seedBibleUrl.searchParams.set('pattern', 'seedBibleDev-Translation');
+      seedBibleUrl.searchParams.set(
+        'translationId',
+        result.availableTranslationsUrl
+      );
+      seedBibleUrl.searchParams.set('bios', 'local inst');
+      seedBibleUrl.searchParams.set('gridPortal', 'home');
+
+      logger.log(`Seed Bible URL: ${seedBibleUrl.href}`);
+
       // copy URL to clipboard
+      const items = ['Copy URL'];
+
+      if (logger instanceof OutputLogger) {
+        items.push('Show Output');
+      }
+
       const answer = await vscode.window.showInformationMessage(
-        `Upload successful! You can view your translation at: ${result.url}`,
-        'Copy URL'
+        `Upload successful! You can view your translation at: ${result.availableTranslationsUrl}`,
+        ...items
       );
 
       if (answer === 'Copy URL') {
-        await vscode.env.clipboard.writeText(result.availableTranslationsUrl);
+        await vscode.env.clipboard.writeText(seedBibleUrl.href);
         vscode.window.showInformationMessage('URL copied to clipboard!');
+      } else if (answer === 'Show Output') {
+        if (logger instanceof OutputLogger) {
+          logger.output.show();
+        }
       }
     } else {
       await showErrorOrOutput('Upload failed.');
