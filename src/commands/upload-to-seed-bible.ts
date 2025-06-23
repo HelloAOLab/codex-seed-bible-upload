@@ -59,7 +59,7 @@ async function loadOrAskForMetadata(
 ): Promise<InputTranslationMetadata | undefined> {
   const logger = log.getLogger();
   let metadata: InputTranslationMetadata | undefined;
-  
+
   // Normalize to array for consistent handling
   const uris = Array.isArray(metadataUris) ? metadataUris : [metadataUris];
   let loadedFromUri: vscode.Uri | undefined;
@@ -223,10 +223,7 @@ export async function uploadToSeedBible(
 
   logger.log('Uploading folder: ' + folderToUpload.fsPath);
 
-  const metadataJsonUri = vscode.Uri.joinPath(
-    folderToUpload,
-    'metadata.json'
-  );
+  const metadataJsonUri = vscode.Uri.joinPath(folderToUpload, 'metadata.json');
   const seedBibleMetadataUri = vscode.Uri.joinPath(
     folderToUpload,
     '..',
@@ -276,7 +273,7 @@ export async function uploadToSeedBible(
       logger.log(`Seed Bible URL: ${seedBibleUrl.href}`);
 
       // copy URL to clipboard
-      const items = ['Copy URL'];
+      const items = ['Open', 'Copy URL'];
 
       if (logger instanceof OutputLogger) {
         items.push('Show Output');
@@ -287,7 +284,9 @@ export async function uploadToSeedBible(
         ...items
       );
 
-      if (answer === 'Copy URL') {
+      if (answer === 'Open') {
+        await vscode.env.openExternal(vscode.Uri.parse(seedBibleUrl.href));
+      } else if (answer === 'Copy URL') {
         await vscode.env.clipboard.writeText(seedBibleUrl.href);
         vscode.window.showInformationMessage('URL copied to clipboard!');
       } else if (answer === 'Show Output') {
