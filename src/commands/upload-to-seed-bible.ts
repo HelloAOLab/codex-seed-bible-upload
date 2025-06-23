@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { getAwsCredentials, OutputLogger } from '../utils';
+import { getAwsCredentials, getClient, OutputLogger } from '../utils';
 import { actions } from '@helloao/cli';
 import { InputTranslationMetadata } from '@helloao/tools/generation/index.js';
 import { log } from '@helloao/tools';
+import { parseSessionKey } from '@casual-simulation/aux-common';
 
 async function askForMetadata(): Promise<InputTranslationMetadata> {
   let metadata = {
@@ -141,9 +142,36 @@ export async function uploadToSeedBible(
   if ('errorCode' in credentials) {
     logger.error(`Error obtaining AWS credentials:`, credentials);
     if (credentials.errorCode === 'not_authorized') {
-      vscode.window.showErrorMessage(
-        `You are not currently authorized to upload for the Seed Bible.\nPlease contact craig@helloao.org for access.`
+      const answer = await vscode.window.showErrorMessage(
+        `You are not currently authorized to upload for the Seed Bible.\nPlease contact craig@helloao.org with your user ID for access.`,
+        'Copy User ID',
+        'Show Output'
       );
+
+      if (answer === 'Copy User ID') {
+        const client = await getClient(context, false);
+
+        const sessionKey = client?.sessionKey;
+
+        if (sessionKey) {
+          const parsed = parseSessionKey(sessionKey);
+          if (parsed) {
+            const [userId] = parsed;
+            await vscode.env.clipboard.writeText(userId);
+            vscode.window.showInformationMessage(
+              'User ID copied to clipboard!'
+            );
+          } else {
+            vscode.window.showErrorMessage('No user ID found in global state.');
+          }
+        } else {
+          vscode.window.showErrorMessage('No user ID found in global state.');
+        }
+      } else if (answer === 'Show Output') {
+        if (logger instanceof OutputLogger) {
+          logger.output.show();
+        }
+      }
     } else {
       vscode.window.showErrorMessage(`Error: ${credentials.errorMessage}`);
     }
