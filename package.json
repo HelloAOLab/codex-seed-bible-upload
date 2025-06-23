@@ -2,7 +2,7 @@
   "name": "codex-seed-bible-upload",
   "displayName": "Codex Seed Bible Upload",
   "description": "Upload Codex Bible Translations to the Seed Bible",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.99.0"
   },
