@@ -149,7 +149,7 @@ export async function uploadToSeedBible(
     }
     return;
   } else {
-    logger.log('AWS credentials obtained successfully.', credentials);
+    logger.log('AWS credentials obtained successfully.');
   }
 
   let folderToUpload: vscode.Uri | undefined;
