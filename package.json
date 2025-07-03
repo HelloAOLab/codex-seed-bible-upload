@@ -126,8 +126,8 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@helloao/cli": "0.0.12",
-    "@helloao/tools": "0.0.12",
+    "@helloao/cli": "0.0.13",
+    "@helloao/tools": "0.0.13",
     "@casual-simulation/aux-records": "3.5.1",
     "@casual-simulation/aux-common": "3.5.1"
   },
