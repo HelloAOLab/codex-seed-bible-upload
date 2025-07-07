@@ -287,15 +287,20 @@ export async function uploadToSeedBible(
       logger.log(`S3 URL: ${result.uploadS3Url}`);
       logger.log(`Version: ${result.version}`);
 
-      const seedBibleUrl = new URL(
-        `https://ao.bot/?pattern=seedBibleDev-Translation`
-      );
-      seedBibleUrl.searchParams.set('pattern', 'seedBibleDev-Translation');
+      // Get pattern from configuration
+      const pattern = vscode.workspace
+        .getConfiguration('seedBible.aoBot')
+        .get<string>('pattern', 'SeedBiblePreAlpha');
+      const bios = vscode.workspace
+        .getConfiguration('seedBible.aoBot')
+        .get<string>('bios', 'local inst');
+      const seedBibleUrl = new URL(`https://ao.bot/`);
+      seedBibleUrl.searchParams.set('pattern', pattern);
       seedBibleUrl.searchParams.set(
         'translationId',
         result.availableTranslationsUrl
       );
-      seedBibleUrl.searchParams.set('bios', 'local inst');
+      seedBibleUrl.searchParams.set('bios', bios);
       seedBibleUrl.searchParams.set('gridPortal', 'home');
 
       logger.log(`Seed Bible URL: ${seedBibleUrl.href}`);

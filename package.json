@@ -85,6 +85,21 @@
           "when": "true"
         }
       ]
+    },
+    "configuration": {
+      "title": "Seed Bible Upload",
+      "properties": {
+        "seedBible.aoBot.pattern": {
+          "type": "string",
+          "default": "SeedBiblePreAlpha",
+          "description": "The pattern to use when opening the Seed Bible in ao.bot"
+        },
+        "seedBible.aoBot.bios": {
+          "type": "string",
+          "default": "local inst",
+          "description": "The bios to use when opening the Seed Bible in ao.bot"
+        }
+      }
     }
   },
   "repository": {
