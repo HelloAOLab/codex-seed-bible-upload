@@ -40,6 +40,12 @@ jobs:
         with:
           name: 'codex-seed-bible-upload.vsix'
           path: '*.vsix'
+      - name: Publish to OVSX
+        if: github.ref_type == 'tag'
+        run: |
+          EXTENSION_NAME=$(find . -name *.vsix)
+          cp "$EXTENSION_NAME" "codex-seed-bible-upload.vsix"
+          pnpx ovsx publish "codex-seed-bible-upload.vsix" -p "${{ secrets.OvsxPublishKey }}"
       - name: Release
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
