@@ -17,6 +17,11 @@ No known issues.
 
 ## Release Notes
 
+### v1.1.0
+
+- Updated the default pattern to `SeedBible`.
+- Updated the API generators to match v1.6.0 of the Free Use Bible API.
+
 ### 1.0.0
 
 Initial release.
