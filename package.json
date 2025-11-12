@@ -153,5 +153,6 @@
     "*.{js,jsx,ts,tsx,vue}": [
       "eslint --fix"
     ]
-  }
+  },
+  "icon": "media/seed-bible-icon.png"
 }
