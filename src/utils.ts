@@ -13,6 +13,7 @@ import {
 } from '@casual-simulation/aux-common';
 import { GetDataFailure, GetDataResult } from '@casual-simulation/aux-records';
 import { log } from '@helloao/tools';
+import { getLogger } from '@helloao/tools/log.js';
 
 const client = createRecordsClient('https://api.ao.bot');
 
@@ -73,6 +74,8 @@ export async function login(context: vscode.ExtensionContext): Promise<void> {
 
   if (!loginResult.success) {
     vscode.window.showErrorMessage(`Login failed: ${loginResult.errorMessage}`);
+    const logger = getLogger();
+    logger.error('login failed:', loginResult);
     throw new Error(`Login failed: ${loginResult.errorMessage}`);
   } else {
     vscode.window.showInformationMessage(

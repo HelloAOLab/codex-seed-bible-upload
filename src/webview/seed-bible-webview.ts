@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
-import { uploadToSeedBible } from '../commands/upload-to-seed-bible';
+import {
+  uploadToSeedBible,
+  SeedBibleMetadata,
+} from '../commands/upload-to-seed-bible';
 import { InputTranslationMetadata } from '@helloao/tools/generation/index.js';
 import { log } from '@helloao/tools';
 import { getClient, getOptions, login, logout } from '../utils';
@@ -9,6 +12,7 @@ import {
   isExpired,
   parseSessionKey,
 } from '@casual-simulation/aux-common';
+import { loadAnnotations, Annotation } from '../annotations';
 
 /**
  * Manages the webview panel for the Seed Bible Upload UI
@@ -19,7 +23,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private _extensionUri: vscode.Uri;
   private _context: vscode.ExtensionContext;
-  private _metadata?: InputTranslationMetadata;
+  private _metadata?: SeedBibleMetadata;
 
   constructor(context: vscode.ExtensionContext) {
     this._extensionUri = context.extensionUri;
@@ -121,9 +125,42 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
             loginStatus: status,
           });
           break;
+        case 'loadAnnotations':
+          try {
+            if (!this._metadata?.recordKey) {
+              webviewView.webview.postMessage({
+                command: 'annotationsError',
+                error:
+                  'No recordKey found in metadata. Please save metadata first.',
+              });
+              break;
+            }
+
+            const annotations = await loadAnnotations(
+              this._context,
+              this._metadata.recordKey,
+              message.bookId,
+              message.chapterNumber,
+              message.group
+            );
+
+            webviewView.webview.postMessage({
+              command: 'updateAnnotations',
+              annotations,
+              bookId: message.bookId,
+              chapterNumber: message.chapterNumber,
+            });
+          } catch (error) {
+            webviewView.webview.postMessage({
+              command: 'annotationsError',
+              error: String(error),
+            });
+          }
+          break;
       }
     });
   }
+
   private _getWebviewContent(
     webview: vscode.Webview,
     loginStatus?: { isLoggedIn: boolean; userInfo?: any }
@@ -282,6 +319,40 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 height: 14px;
                 fill: var(--vscode-foreground);
             }
+            .annotation-item {
+                border: 1px solid var(--vscode-input-border);
+                border-radius: 4px;
+                padding: 12px;
+                margin-bottom: 12px;
+                background-color: var(--vscode-input-background);
+            }
+            .annotation-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+                font-size: 12px;
+                color: var(--vscode-descriptionForeground);
+            }
+            .annotation-verse {
+                font-weight: 600;
+                color: var(--vscode-foreground);
+            }
+            .annotation-content {
+                margin-top: 8px;
+                line-height: 1.5;
+            }
+            .annotation-meta {
+                font-size: 11px;
+                color: var(--vscode-descriptionForeground);
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid var(--vscode-input-border);
+            }
+            .no-annotations {
+                color: var(--vscode-descriptionForeground);
+                font-style: italic;
+            }
         </style>
     </head>
     <body>
@@ -289,6 +360,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
             <div class="tabs">
                 <button class="tab active" data-tab="upload">Upload</button>
                 <button class="tab" data-tab="metadata">Metadata</button>
+                <button class="tab" data-tab="annotations">Annotations</button>
                 <button class="tab" data-tab="account">Account</button>
             </div>
             
@@ -368,6 +440,43 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                         <button type="button" id="reloadMetadataBtn">Reload</button>
                     </div>
                 </form>
+            </div>
+
+            <div class="tab-content" id="annotations-tab">
+                <h2>Translation Annotations</h2>
+                <div class="card">
+                    <h3>Load Annotations</h3>
+                    <div class="form-group">
+                        <label for="bookId">Book ID:</label>
+                        <input type="text" id="bookId" name="bookId" placeholder="e.g., GEN, MAT, REV">
+                        <div class="helper-text">Enter the 3-letter book code (e.g., GEN for Genesis, MAT for Matthew)</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="chapterNumber">Chapter Number:</label>
+                        <input type="number" id="chapterNumber" name="chapterNumber" min="1" placeholder="e.g., 1">
+                        <div class="helper-text">Enter the chapter number</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="annotationGroup">Group (optional):</label>
+                        <input type="text" id="annotationGroup" name="annotationGroup" placeholder="annotations">
+                        <div class="helper-text">The annotation group name (defaults to "annotations")</div>
+                    </div>
+                    <button type="button" id="loadAnnotationsBtn">Load Annotations</button>
+                </div>
+                
+                <div id="annotations-loading" class="card" style="display: none;">
+                    <p>Loading annotations...</p>
+                </div>
+                
+                <div id="annotations-error" class="card" style="display: none; background-color: var(--vscode-inputValidation-errorBackground);">
+                    <h3>Error</h3>
+                    <p id="annotations-error-message"></p>
+                </div>
+                
+                <div id="annotations-result" class="card" style="display: none;">
+                    <h3>Annotations for <span id="result-book-chapter"></span></h3>
+                    <div id="annotations-list"></div>
+                </div>
             </div>
 
             <div class="tab-content" id="account-tab">
@@ -507,6 +616,12 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                         loginStatus = message.loginStatus;
                         updateLoginStatusUI(loginStatus);
                         break;
+                    case 'updateAnnotations':
+                        displayAnnotations(message.annotations, message.bookId, message.chapterNumber);
+                        break;
+                    case 'annotationsError':
+                        displayAnnotationsError(message.error);
+                        break;
                 }
             });
             
@@ -633,6 +748,111 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                     shortNameField.value = idField.value;
                 }
             });
+            
+            // Handle load annotations button
+            document.getElementById('loadAnnotationsBtn').addEventListener('click', () => {
+                const bookId = document.getElementById('bookId').value.trim().toUpperCase();
+                const chapterNumber = parseInt(document.getElementById('chapterNumber').value);
+                const group = document.getElementById('annotationGroup').value.trim() || 'annotations';
+                
+                if (!bookId) {
+                    displayAnnotationsError('Please enter a book ID');
+                    return;
+                }
+                
+                if (!chapterNumber || chapterNumber < 1) {
+                    displayAnnotationsError('Please enter a valid chapter number');
+                    return;
+                }
+                
+                // Show loading state
+                document.getElementById('annotations-loading').style.display = 'block';
+                document.getElementById('annotations-error').style.display = 'none';
+                document.getElementById('annotations-result').style.display = 'none';
+                
+                vscode.postMessage({
+                    command: 'loadAnnotations',
+                    bookId,
+                    chapterNumber,
+                    group
+                });
+            });
+            
+            // Function to display annotations
+            function displayAnnotations(annotations, bookId, chapterNumber) {
+                // Hide loading and error
+                document.getElementById('annotations-loading').style.display = 'none';
+                document.getElementById('annotations-error').style.display = 'none';
+                
+                // Show result
+                const resultDiv = document.getElementById('annotations-result');
+                resultDiv.style.display = 'block';
+                
+                // Update header
+                document.getElementById('result-book-chapter').textContent = \`\${bookId} \${chapterNumber}\`;
+                
+                // Display annotations
+                const listDiv = document.getElementById('annotations-list');
+                
+                if (!annotations || annotations.length === 0) {
+                    listDiv.innerHTML = '<p class="no-annotations">No annotations found for this chapter.</p>';
+                    return;
+                }
+                
+                // Sort annotations by verse number and order
+                annotations.sort((a, b) => {
+                    if (a.verseNumber !== b.verseNumber) {
+                        return (a.verseNumber || 0) - (b.verseNumber || 0);
+                    }
+                    return (a.order || 0) - (b.order || 0);
+                });
+                
+                listDiv.innerHTML = annotations.map(annotation => {
+                    const verseRef = annotation.endVerseNumber 
+                        ? \`\${annotation.verseNumber}-\${annotation.endVerseNumber}\`
+                        : annotation.verseNumber || 'Chapter';
+                    
+                    const content = annotation.data.type === 'comment' 
+                        ? annotation.data.html 
+                        : JSON.stringify(annotation.data);
+                    
+                    const createdDate = annotation.data.createdAtMs 
+                        ? new Date(annotation.data.createdAtMs).toLocaleString()
+                        : 'Unknown';
+                    
+                    const updatedDate = annotation.data.updatedAtMs 
+                        ? new Date(annotation.data.updatedAtMs).toLocaleString()
+                        : null;
+                    
+                    return \`
+                        <div class="annotation-item">
+                            <div class="annotation-header">
+                                <span class="annotation-verse">Verse \${verseRef}</span>
+                                <span>\${annotation.data.type}</span>
+                            </div>
+                            <div class="annotation-content">\${content}</div>
+                            <div class="annotation-meta">
+                                <div>ID: \${annotation.id}</div>
+                                <div>Created: \${createdDate}</div>
+                                \${updatedDate ? \`<div>Updated: \${updatedDate}</div>\` : ''}
+                                \${annotation.data.replyTo ? \`<div>Reply to: \${annotation.data.replyTo}</div>\` : ''}
+                            </div>
+                        </div>
+                    \`;
+                }).join('');
+            }
+            
+            // Function to display annotations error
+            function displayAnnotationsError(error) {
+                // Hide loading and result
+                document.getElementById('annotations-loading').style.display = 'none';
+                document.getElementById('annotations-result').style.display = 'none';
+                
+                // Show error
+                const errorDiv = document.getElementById('annotations-error');
+                errorDiv.style.display = 'block';
+                document.getElementById('annotations-error-message').textContent = error;
+            }
         </script>
     </body>
     </html>`;
@@ -688,9 +908,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
   /**
    * Save the metadata to the workspace
    */
-  private async _saveMetadata(
-    metadata: InputTranslationMetadata
-  ): Promise<void> {
+  private async _saveMetadata(metadata: SeedBibleMetadata): Promise<void> {
     const logger = log.getLogger();
     try {
       // If we don't have a URI yet, ask the user where to save
@@ -743,7 +961,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
   /**
    * Get default metadata values
    */
-  private _getDefaultMetadata(): InputTranslationMetadata {
+  private _getDefaultMetadata(): SeedBibleMetadata {
     return {
       website: '',
       licenseUrl: '',
