@@ -91,6 +91,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 annotations,
                 bookId: bookId,
                 chapterNumber: parsed.chapter,
+                currentVerse: parsed.verse,
               });
             }
           }
@@ -165,6 +166,57 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
             command: 'updateLoginStatus',
             loginStatus: status,
           });
+          break;
+        case 'refreshAnnotations':
+          try {
+            if (!this._metadata?.recordKey) {
+              webviewView.webview.postMessage({
+                command: 'annotationsError',
+                error:
+                  'No recordKey found in metadata. Please save metadata first.',
+              });
+              break;
+            }
+
+            const { getStoreState } = await initializeStateStore();
+            const cellId = await getStoreState('cellId');
+
+            if (!cellId?.cellId) {
+              // No current cell, don't show error, just keep the prompt visible
+              break;
+            }
+
+            const parsed = parseVerseReference(cellId.cellId);
+            if (!parsed) {
+              break;
+            }
+
+            const bookId = getBookId(parsed.book);
+            if (!bookId) {
+              l.warn('Could not find book ID for book code:', parsed.book);
+              break;
+            }
+
+            const annotations = await loadAnnotations(
+              this._context,
+              this._metadata.recordKey,
+              bookId,
+              parsed.chapter
+            );
+
+            webviewView.webview.postMessage({
+              command: 'updateAnnotations',
+              annotations,
+              bookId: bookId,
+              chapterNumber: parsed.chapter,
+              currentVerse: parsed.verse,
+            });
+          } catch (error) {
+            webviewView.webview.postMessage({
+              command: 'annotationsError',
+              error: String(error),
+            });
+          }
           break;
         case 'loadAnnotations':
           try {
@@ -376,6 +428,10 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 margin-bottom: 12px;
                 background-color: var(--vscode-input-background);
             }
+            .annotation-item.highlighted {
+                border: 2px solid var(--vscode-focusBorder);
+                background-color: var(--vscode-list-activeSelectionBackground);
+            }
             .annotation-header {
                 display: flex;
                 justify-content: space-between;
@@ -494,24 +550,10 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
 
             <div class="tab-content" id="annotations-tab">
                 <h2>Translation Annotations</h2>
-                <div class="card">
-                    <h3>Load Annotations</h3>
-                    <div class="form-group">
-                        <label for="bookId">Book ID:</label>
-                        <input type="text" id="bookId" name="bookId" placeholder="e.g., GEN, MAT, REV">
-                        <div class="helper-text">Enter the 3-letter book code (e.g., GEN for Genesis, MAT for Matthew)</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="chapterNumber">Chapter Number:</label>
-                        <input type="number" id="chapterNumber" name="chapterNumber" min="1" placeholder="e.g., 1">
-                        <div class="helper-text">Enter the chapter number</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="annotationGroup">Group (optional):</label>
-                        <input type="text" id="annotationGroup" name="annotationGroup" placeholder="annotations">
-                        <div class="helper-text">The annotation group name (defaults to "annotations")</div>
-                    </div>
-                    <button type="button" id="loadAnnotationsBtn">Load Annotations</button>
+                <div id="annotations-prompt" class="card">
+                    <h3>Select a verse to display annotations</h3>
+                    <p>Annotations are automatically loaded based on the currently active verse or chapter in your editor.</p>
+                    <p>Navigate to different verses in your translation files to view their associated annotations here.</p>
                 </div>
                 
                 <div id="annotations-loading" class="card" style="display: none;">
@@ -587,6 +629,13 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                     // If switching to account tab, refresh login status
                     if (tabName === 'account') {
                         refreshLoginStatus();
+                    }
+                    
+                    // If switching to annotations tab, request current annotations
+                    if (tabName === 'annotations') {
+                        vscode.postMessage({
+                            command: 'refreshAnnotations'
+                        });
                     }
                 });
             });
@@ -667,7 +716,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                         updateLoginStatusUI(loginStatus);
                         break;
                     case 'updateAnnotations':
-                        displayAnnotations(message.annotations, message.bookId, message.chapterNumber);
+                        displayAnnotations(message.annotations, message.bookId, message.chapterNumber, message.currentVerse);
                         break;
                     case 'annotationsError':
                         displayAnnotationsError(message.error);
@@ -799,40 +848,12 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                 }
             });
             
-            // Handle load annotations button
-            document.getElementById('loadAnnotationsBtn').addEventListener('click', () => {
-                const bookId = document.getElementById('bookId').value.trim().toUpperCase();
-                const chapterNumber = parseInt(document.getElementById('chapterNumber').value);
-                const group = document.getElementById('annotationGroup').value.trim() || 'annotations';
-                
-                if (!bookId) {
-                    displayAnnotationsError('Please enter a book ID');
-                    return;
-                }
-                
-                if (!chapterNumber || chapterNumber < 1) {
-                    displayAnnotationsError('Please enter a valid chapter number');
-                    return;
-                }
-                
-                // Show loading state
-                document.getElementById('annotations-loading').style.display = 'block';
-                document.getElementById('annotations-error').style.display = 'none';
-                document.getElementById('annotations-result').style.display = 'none';
-                
-                vscode.postMessage({
-                    command: 'loadAnnotations',
-                    bookId,
-                    chapterNumber,
-                    group
-                });
-            });
-            
             // Function to display annotations
-            function displayAnnotations(annotations, bookId, chapterNumber) {
-                // Hide loading and error
+            function displayAnnotations(annotations, bookId, chapterNumber, currentVerse) {
+                // Hide loading, error, and prompt
                 document.getElementById('annotations-loading').style.display = 'none';
                 document.getElementById('annotations-error').style.display = 'none';
+                document.getElementById('annotations-prompt').style.display = 'none';
                 
                 // Show result
                 const resultDiv = document.getElementById('annotations-result');
@@ -874,8 +895,15 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                         ? new Date(annotation.data.updatedAtMs).toLocaleString()
                         : null;
                     
+                    // Check if this annotation should be highlighted
+                    const isHighlighted = currentVerse && 
+                        currentVerse >= annotation.verseNumber && 
+                        currentVerse <= (annotation.endVerseNumber ?? annotation.verseNumber);
+                    
+                    const highlightClass = isHighlighted ? ' highlighted' : '';
+                    
                     return \`
-                        <div class="annotation-item">
+                        <div class="annotation-item\${highlightClass}">
                             <div class="annotation-header">
                                 <span class="annotation-verse">Verse \${verseRef}</span>
                                 <span>\${annotation.data.type}</span>
@@ -890,13 +918,22 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                         </div>
                     \`;
                 }).join('');
+                
+                // Scroll to the first highlighted annotation
+                setTimeout(() => {
+                    const firstHighlighted = listDiv.querySelector('.annotation-item.highlighted');
+                    if (firstHighlighted) {
+                        firstHighlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
             }
             
             // Function to display annotations error
             function displayAnnotationsError(error) {
-                // Hide loading and result
+                // Hide loading, result, and prompt
                 document.getElementById('annotations-loading').style.display = 'none';
                 document.getElementById('annotations-result').style.display = 'none';
+                document.getElementById('annotations-prompt').style.display = 'none';
                 
                 // Show error
                 const errorDiv = document.getElementById('annotations-error');
