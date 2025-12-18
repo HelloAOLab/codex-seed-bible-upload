@@ -4,6 +4,10 @@ All notable changes to the "codex-seed-bible-upload" extension will be documente
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## v1.3.0
+
+- Added support for displaying annotations made on published translations.
+
 ## v1.1.0
 
 - Updated the default pattern to `SeedBible`.
