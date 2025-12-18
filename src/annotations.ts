@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as z from 'zod';
 import { callProcedure } from './utils';
+import { sortBy } from 'es-toolkit';
 
 export const COMMENT_SCHEMA = z.object({
   type: z.literal('comment'),
@@ -89,5 +90,11 @@ export async function loadAnnotations(
     lastAddress = items[items.length - 1].address as string;
   }
 
-  return annotations;
+  return sortBy(annotations, [
+    'bookId',
+    'chapterNumber',
+    'verseNumber',
+    'endVerseNumber',
+    'order',
+  ]);
 }
