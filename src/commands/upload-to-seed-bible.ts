@@ -179,6 +179,7 @@ export async function uploadToSeedBible(
   context: vscode.ExtensionContext
 ): Promise<void> {
   const logger = log.getLogger();
+  logger.log('Starting upload to Seed Bible...');
   const credentials = await getAwsCredentials(context);
 
   if ('errorCode' in credentials) {
@@ -344,6 +345,13 @@ export async function uploadToSeedBible(
       );
       seedBibleUrl.searchParams.set('bios', bios);
       seedBibleUrl.searchParams.set('gridPortal', 'home');
+
+      if (metadata.recordKey) {
+        seedBibleUrl.searchParams.set(
+          'annotationRecordKey',
+          metadata.recordKey
+        );
+      }
 
       logger.log(`Seed Bible URL: ${seedBibleUrl.href}`);
 
