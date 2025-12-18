@@ -13,6 +13,9 @@ import {
   parseSessionKey,
 } from '@casual-simulation/aux-common';
 import { loadAnnotations, Annotation } from '../annotations';
+import { initializeStateStore } from '../stateStore';
+import { getLogger } from '@helloao/tools/log.js';
+import { getBookId, parseVerseReference } from '@helloao/tools/utils.js';
 
 /**
  * Manages the webview panel for the Seed Bible Upload UI
@@ -56,6 +59,44 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
         );
       }
     );
+
+    const l = getLogger();
+
+    initializeStateStore().then(({ storeListener }) => {
+      storeListener('cellId', async (value) => {
+        l.log('NEW CELL ID:', value);
+
+        if (!this._metadata?.recordKey) {
+          return;
+        }
+
+        if (value?.cellId) {
+          const parsed = parseVerseReference(value.cellId);
+
+          if (parsed) {
+            const bookId = getBookId(parsed.book);
+
+            if (!bookId) {
+              l.warn('Could not find book ID for book code:', parsed.book);
+            } else {
+              const annotations = await loadAnnotations(
+                this._context,
+                this._metadata.recordKey,
+                bookId,
+                parsed.chapter
+              );
+
+              webviewView.webview.postMessage({
+                command: 'updateAnnotations',
+                annotations,
+                bookId: bookId,
+                chapterNumber: parsed.chapter,
+              });
+            }
+          }
+        }
+      });
+    });
 
     // Handle messages from the webview
     webviewView.webview.onDidReceiveMessage(async (message) => {
@@ -135,6 +176,15 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
               });
               break;
             }
+
+            const { getStoreState, storeListener, updateStoreState } =
+              await initializeStateStore();
+
+            const cellId = await getStoreState('cellId');
+            l.log('CELL ID: ', cellId);
+
+            const verseRef = await getStoreState('verseRef' as any);
+            l.log('VERSE REF: ', verseRef);
 
             const annotations = await loadAnnotations(
               this._context,
