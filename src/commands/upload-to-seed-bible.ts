@@ -81,6 +81,7 @@ export async function loadOrAskForMetadata(
       logger.log('Generating new record key...');
       const result = await callProcedure(context, 'createRecordKey', {
         recordName: uuid(),
+        policy: 'subjectless',
       });
 
       if (result.success) {
