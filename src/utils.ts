@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import {
   RecordsClient,
+  RecordsClientInputs,
+  RecordsClientQueries,
   RecordsClientType,
   createRecordsClient,
 } from '@casual-simulation/aux-records/RecordsClient';
@@ -11,6 +13,7 @@ import {
 } from '@casual-simulation/aux-common';
 import { GetDataFailure, GetDataResult } from '@casual-simulation/aux-records';
 import { log } from '@helloao/tools';
+import { getLogger } from '@helloao/tools/log.js';
 
 const client = createRecordsClient('https://api.ao.bot');
 
@@ -71,6 +74,8 @@ export async function login(context: vscode.ExtensionContext): Promise<void> {
 
   if (!loginResult.success) {
     vscode.window.showErrorMessage(`Login failed: ${loginResult.errorMessage}`);
+    const logger = getLogger();
+    logger.error('login failed:', loginResult);
     throw new Error(`Login failed: ${loginResult.errorMessage}`);
   } else {
     vscode.window.showInformationMessage(
@@ -111,13 +116,16 @@ export async function login(context: vscode.ExtensionContext): Promise<void> {
   });
 }
 
-export async function callProcedure(
+type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
+
+export async function callProcedure<TKey extends keyof RecordsClientType>(
   context: vscode.ExtensionContext,
-  operation: string,
-  input: any,
-  query?: any
-) {
-  const client = await getClient(context);
+  operation: TKey,
+  input: RecordsClientInputs[TKey],
+  query?: RecordsClientQueries[TKey],
+  automaticallyLogin = true
+): Promise<UnwrapPromise<ReturnType<RecordsClientType[TKey]>>> {
+  const client = await getClient(context, automaticallyLogin);
   while (true) {
     const result = await client.callProcedure(
       operation,
@@ -145,16 +153,14 @@ export async function callProcedure(
   }
 }
 
-export async function getAwsCredentials(
-  context: vscode.ExtensionContext
-): Promise<{ accessKeyId: string; secretAccessKey: string } | GetDataFailure> {
-  const result: GetDataResult = await callProcedure(context, 'getData', {
+export async function getAwsCredentials(context: vscode.ExtensionContext) {
+  const result = await callProcedure(context, 'getData', {
     recordName: '43716a62-6b01-483e-a274-94d1de29d08d',
     address: 'awsAccessKey',
   });
 
   if (result.success) {
-    return result.data;
+    return result.data as { accessKeyId: string; secretAccessKey: string };
   } else {
     const logger = log.getLogger();
     logger.error('Failed to get AWS credentials:', result);

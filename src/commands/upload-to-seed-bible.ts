@@ -1,9 +1,15 @@
 import * as vscode from 'vscode';
-import { getAwsCredentials, getClient, OutputLogger } from '../utils';
+import {
+  callProcedure,
+  getAwsCredentials,
+  getClient,
+  OutputLogger,
+} from '../utils';
 import { actions } from '@helloao/cli';
 import { InputTranslationMetadata } from '@helloao/tools/generation/index.js';
 import { log } from '@helloao/tools';
 import { parseSessionKey } from '@casual-simulation/aux-common';
+import { v4 as uuid } from 'uuid';
 
 async function askForMetadata(): Promise<InputTranslationMetadata> {
   let metadata = {
@@ -54,16 +60,39 @@ async function askForMetadata(): Promise<InputTranslationMetadata> {
   return metadata;
 }
 
-async function loadOrAskForMetadata(
+export interface SeedBibleMetadata extends InputTranslationMetadata {
+  recordKey?: string;
+}
+
+export async function loadOrAskForMetadata(
+  context: vscode.ExtensionContext,
   metadataUris: vscode.Uri | vscode.Uri[],
   output?: vscode.OutputChannel
-): Promise<InputTranslationMetadata | undefined> {
+): Promise<SeedBibleMetadata | undefined> {
   const logger = log.getLogger();
-  let metadata: InputTranslationMetadata | undefined;
+  let metadata: SeedBibleMetadata | undefined;
 
   // Normalize to array for consistent handling
   const uris = Array.isArray(metadataUris) ? metadataUris : [metadataUris];
   let loadedFromUri: vscode.Uri | undefined;
+
+  const generateRecordKeyIfNeeded = async (metadata: SeedBibleMetadata) => {
+    if (!metadata.recordKey) {
+      logger.log('Generating new record key...');
+      const result = await callProcedure(context, 'createRecordKey', {
+        recordName: uuid(),
+        policy: 'subjectless',
+      });
+
+      if (result.success) {
+        metadata.recordKey = result.recordKey;
+        return true;
+      } else {
+        logger.error('Failed to create record key:', result);
+      }
+    }
+    return false;
+  };
 
   // Try to load from each URI in order
   for (const metadataUri of uris) {
@@ -71,6 +100,17 @@ async function loadOrAskForMetadata(
       const bytes = await vscode.workspace.fs.readFile(metadataUri);
       metadata = JSON.parse(new TextDecoder().decode(bytes));
       loadedFromUri = metadataUri;
+
+      if (metadata && (await generateRecordKeyIfNeeded(metadata))) {
+        // Save updated metadata with new record key
+        await vscode.workspace.fs.writeFile(
+          metadataUri,
+          new TextEncoder().encode(JSON.stringify(metadata, null, 2))
+        );
+        logger.log(
+          `Updated metadata with new record key at ${metadataUri.fsPath}`
+        );
+      }
 
       if (output) {
         logger.log(`Loaded metadata from ${metadataUri.fsPath}`);
@@ -82,7 +122,7 @@ async function loadOrAskForMetadata(
           `Error reading metadata file at ${metadataUri.fsPath}: ${error}`
         );
       }
-      console.error('Error reading metadata file:', error);
+      logger.error('Error reading metadata file:', error);
       // Continue to next URI
     }
   }
@@ -108,6 +148,8 @@ async function loadOrAskForMetadata(
       return undefined; // Exit for now, user will try again after creating metadata
     } else {
       metadata = await askForMetadata();
+
+      await generateRecordKeyIfNeeded(metadata);
 
       // Use the last URI for saving
       const saveToUri = uris[uris.length - 1];
@@ -137,6 +179,7 @@ export async function uploadToSeedBible(
   context: vscode.ExtensionContext
 ): Promise<void> {
   const logger = log.getLogger();
+  logger.log('Starting upload to Seed Bible...');
   const credentials = await getAwsCredentials(context);
 
   if ('errorCode' in credentials) {
@@ -259,7 +302,7 @@ export async function uploadToSeedBible(
     'seed-bible-metadata.json'
   );
 
-  const metadata = await loadOrAskForMetadata([
+  const metadata = await loadOrAskForMetadata(context, [
     metadataJsonUri,
     seedBibleMetadataUri,
   ]);
@@ -302,6 +345,13 @@ export async function uploadToSeedBible(
       );
       seedBibleUrl.searchParams.set('bios', bios);
       seedBibleUrl.searchParams.set('gridPortal', 'home');
+
+      if (metadata.recordKey) {
+        seedBibleUrl.searchParams.set(
+          'annotationRecordKey',
+          metadata.recordKey
+        );
+      }
 
       logger.log(`Seed Bible URL: ${seedBibleUrl.href}`);
 
