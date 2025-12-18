@@ -17,6 +17,10 @@ No known issues.
 
 ## Release Notes
 
+## v1.3.1
+
+- Improved the annotations integration to be able to automatically pull them from the currently selected cell in Codex.
+
 ## v1.3.0
 
 - Added support for displaying annotations made on published translations.

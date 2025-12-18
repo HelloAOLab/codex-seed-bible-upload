@@ -4,6 +4,10 @@ All notable changes to the "codex-seed-bible-upload" extension will be documente
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## v1.3.1
+
+- Improved the annotations integration to be able to automatically pull them from the currently selected cell in Codex.
+
 ## v1.3.0
 
 - Added support for displaying annotations made on published translations.
