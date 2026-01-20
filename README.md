@@ -17,6 +17,10 @@ No known issues.
 
 ## Release Notes
 
+## v1.3.3
+
+- Fixed the upload process to work with newer Codex files.
+
 ## v1.3.1
 
 - Improved the annotations integration to be able to automatically pull them from the currently selected cell in Codex.
