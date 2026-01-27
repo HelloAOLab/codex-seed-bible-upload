@@ -17,10 +17,11 @@ No known issues.
 
 ## Release Notes
 
-## v1.3.4
+## v1.4.0
 
 - Forced users to always enter 3 letter language codes and automatically converted language codes to lowercase.
 - Fixed an issue where the annotations record key would be saved to the translation metadata when uploading.
+- Fixed issues with parsing `.codex` files that have footnotes.
 
 ## v1.3.3
 
