@@ -46,6 +46,23 @@ async function askForMetadata(): Promise<InputTranslationMetadata> {
           return null;
         },
       });
+    } else if (key === 'language') {
+      value = await vscode.window.showInputBox({
+        title: 'Metadata - Language Code',
+        prompt:
+          'Enter the three letter language code (e.g., "eng", "esp", "fra", etc.)',
+        placeHolder: key,
+        validateInput: (value: string) => {
+          if (!value) {
+            return 'Language code is required.';
+          } else if (!/^[a-zA-Z]{3}$/.test(value)) {
+            return 'Language code must be a three letter code.';
+          }
+          return null;
+        },
+      });
+
+      value = value?.toLowerCase();
     } else {
       value = await vscode.window.showInputBox({
         prompt: `Enter value for ${key}`,

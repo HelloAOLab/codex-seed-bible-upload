@@ -735,7 +735,7 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
                     name: document.getElementById('name').value,
                     englishName: document.getElementById('englishName').value,
                     shortName: document.getElementById('shortName').value,
-                    language: document.getElementById('language').value,
+                    language: document.getElementById('language').value?.toLowerCase(),
                     direction: document.getElementById('direction').value,
                     website: document.getElementById('website').value,
                     licenseUrl: document.getElementById('licenseUrl').value
