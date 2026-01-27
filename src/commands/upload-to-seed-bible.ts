@@ -319,15 +319,17 @@ export async function uploadToSeedBible(
     'seed-bible-metadata.json'
   );
 
-  const metadata = await loadOrAskForMetadata(context, [
+  const savedMetadata = await loadOrAskForMetadata(context, [
     metadataJsonUri,
     seedBibleMetadataUri,
   ]);
 
-  if (!metadata) {
+  if (!savedMetadata) {
     await showErrorOrOutput('No metadata provided for upload.');
     return;
   }
+
+  const { recordKey, ...metadata } = savedMetadata;
 
   try {
     const result = await actions.uploadTestTranslation(folderToUpload.fsPath, {
@@ -363,11 +365,8 @@ export async function uploadToSeedBible(
       seedBibleUrl.searchParams.set('bios', bios);
       seedBibleUrl.searchParams.set('gridPortal', 'home');
 
-      if (metadata.recordKey) {
-        seedBibleUrl.searchParams.set(
-          'annotationRecordKey',
-          metadata.recordKey
-        );
+      if (recordKey) {
+        seedBibleUrl.searchParams.set('annotationRecordKey', recordKey);
       }
 
       logger.log(`Seed Bible URL: ${seedBibleUrl.href}`);
