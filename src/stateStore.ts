@@ -6,9 +6,10 @@ interface SelectedTextDataWithContext {
   vrefAtStartOfLine: string | null;
   selectedText: string | null;
 }
-interface CellIdGlobalState {
+export interface CellIdGlobalState {
   cellId: string;
   uri: string;
+  globalReferences: string[];
 }
 
 type StateStoreUpdate =

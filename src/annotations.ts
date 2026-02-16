@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as z from 'zod';
 import { callProcedure } from './utils';
 import { sortBy } from 'es-toolkit';
+import { getLogger } from '@helloao/tools/log.js';
 
 export const COMMENT_SCHEMA = z.object({
   type: z.literal('comment'),
@@ -58,6 +59,14 @@ export async function loadAnnotations(
   chapterNumber: number,
   group?: string
 ): Promise<Annotation[]> {
+  const l = getLogger();
+  l.log('Loading annotations with params: ', {
+    recordNameOrKey,
+    bookId,
+    chapterNumber,
+    group,
+  });
+
   const marker = getAnnotationMarker(bookId, chapterNumber, group);
 
   const annotations: Annotation[] = [];
@@ -70,19 +79,20 @@ export async function loadAnnotations(
     });
 
     if (data.success === false) {
-      console.error('Error loading annotations: ', data);
+      l.error('Error loading annotations: ', data);
       throw new Error('Error loading annotations');
     }
 
     const items = data.items;
     if (items.length === 0) {
+      l.log('No more annotations to load.');
       break;
     }
 
     for (let item of items) {
       const parsed = ANNOTATION_SCHEMA.safeParse(item.data);
       if (!parsed.success) {
-        console.warn('Failed to parse annotation: ', item.data, parsed.error);
+        l.warn('Failed to parse annotation: ', item.data, parsed.error);
       } else {
         annotations.push(parsed.data);
       }
@@ -90,6 +100,9 @@ export async function loadAnnotations(
     lastAddress = items[items.length - 1].address as string;
   }
 
+  l.log(
+    `Loaded ${annotations.length} annotations for ${bookId} ${chapterNumber}.`
+  );
   return sortBy(annotations, [
     'bookId',
     'chapterNumber',

@@ -13,7 +13,7 @@ import {
   parseSessionKey,
 } from '@casual-simulation/aux-common';
 import { loadAnnotations, Annotation } from '../annotations';
-import { initializeStateStore } from '../stateStore';
+import { initializeStateStore, type CellIdGlobalState } from '../stateStore';
 import { getLogger } from '@helloao/tools/log.js';
 import { getBookId, parseVerseReference } from '@helloao/tools/utils.js';
 
@@ -62,39 +62,68 @@ export class SeedBibleWebviewProvider implements vscode.WebviewViewProvider {
 
     const l = getLogger();
 
+    const getVerseRef = (cell: CellIdGlobalState | undefined | null) => {
+      if (!cell) {
+        return null;
+      }
+      if (cell.cellId) {
+        const parsed = parseVerseReference(cell.cellId);
+        if (parsed) {
+          return parsed;
+        }
+      }
+
+      if (cell.globalReferences) {
+        for (const ref of cell.globalReferences) {
+          const parsed = parseVerseReference(ref);
+          if (parsed) {
+            return parsed;
+          }
+        }
+      }
+
+      console.warn(
+        'Could not parse verse reference from cell ID or global references:',
+        { cell }
+      );
+
+      return null;
+    };
+
     initializeStateStore().then(({ storeListener }) => {
       storeListener('cellId', async (value) => {
         l.log('NEW CELL ID:', value);
 
         if (!this._metadata?.recordKey) {
+          l.log('No recordKey in metadata, skipping annotation load');
           return;
         }
 
-        if (value?.cellId) {
-          const parsed = parseVerseReference(value.cellId);
+        const verseRef = getVerseRef(value);
 
-          if (parsed) {
-            const bookId = getBookId(parsed.book);
+        if (verseRef) {
+          const bookId = getBookId(verseRef.book);
 
-            if (!bookId) {
-              l.warn('Could not find book ID for book code:', parsed.book);
-            } else {
-              const annotations = await loadAnnotations(
-                this._context,
-                this._metadata.recordKey,
-                bookId,
-                parsed.chapter
-              );
+          if (!bookId) {
+            l.warn('Could not find book ID for book code:', verseRef.book);
+          } else {
+            const annotations = await loadAnnotations(
+              this._context,
+              this._metadata.recordKey,
+              bookId,
+              verseRef.chapter
+            );
 
-              webviewView.webview.postMessage({
-                command: 'updateAnnotations',
-                annotations,
-                bookId: bookId,
-                chapterNumber: parsed.chapter,
-                currentVerse: parsed.verse,
-              });
-            }
+            webviewView.webview.postMessage({
+              command: 'updateAnnotations',
+              annotations,
+              bookId: bookId,
+              chapterNumber: verseRef.chapter,
+              currentVerse: verseRef.verse,
+            });
           }
+        } else {
+          l.log('No cell ID found:', value);
         }
       });
     });
