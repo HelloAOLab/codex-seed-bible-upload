@@ -17,6 +17,10 @@ No known issues.
 
 ## Release Notes
 
+## v1.4.1
+
+- Fixed an issue where annotations wouldn't load.
+
 ## v1.4.0
 
 - Forced users to always enter 3 letter language codes and automatically converted language codes to lowercase.
