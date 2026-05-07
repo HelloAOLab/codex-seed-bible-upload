@@ -17,6 +17,10 @@ No known issues.
 
 ## Release Notes
 
+## v1.4.2
+
+- Changed the default pattern to `SeedBibleCodex`.
+
 ## v1.4.1
 
 - Fixed an issue where annotations wouldn't load.

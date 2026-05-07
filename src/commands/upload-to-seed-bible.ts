@@ -352,7 +352,7 @@ export async function uploadToSeedBible(
       // Get pattern from configuration
       const pattern = vscode.workspace
         .getConfiguration('seedBible.aoBot')
-        .get<string>('pattern', 'SeedBiblePreAlpha');
+        .get<string>('pattern', 'SeedBibleCodex');
       const bios = vscode.workspace
         .getConfiguration('seedBible.aoBot')
         .get<string>('bios', 'local inst');

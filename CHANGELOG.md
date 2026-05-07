@@ -4,6 +4,10 @@ All notable changes to the "codex-seed-bible-upload" extension will be documente
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## v1.4.2
+
+- Changed the default pattern to `SeedBibleCodex`.
+
 ## v1.4.1
 
 - Fixed an issue where annotations wouldn't load.

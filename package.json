@@ -91,7 +91,7 @@
       "properties": {
         "seedBible.aoBot.pattern": {
           "type": "string",
-          "default": "SeedBible",
+          "default": "SeedBibleCodex",
           "description": "The pattern to use when opening the Seed Bible in ao.bot"
         },
         "seedBible.aoBot.bios": {
